@@ -1,0 +1,21 @@
+SYNTHETIC DATA - NOT REAL
+response_id,survey_month,country,city,facility,department,domain,score_pct,benchmark_pct,nps,readmission_rate_pct,response_count
+PXS-0001,2025-07,Saudi Arabia,Riyadh,Al Noor Medical City,Emergency,Staff Responsiveness,62.8,69.0,18,16.4,184
+PXS-0002,2025-07,Saudi Arabia,Jeddah,Red Sea Specialist Hospital,Inpatient,Nurse Communication,80.6,78.0,39,11.9,231
+PXS-0003,2025-08,UAE,Abu Dhabi,Al Manara Health Campus,Outpatient,Doctor Communication,84.1,80.0,48,9.8,267
+PXS-0004,2025-08,UAE,Dubai,Creekside Specialist Hospital,Maternity,Care Transition,61.5,57.0,52,8.7,143
+PXS-0005,2025-09,Qatar,Doha,Pearl Medical City,Surgery,Medication Communication,68.9,66.0,34,12.6,119
+PXS-0006,2025-09,Kuwait,Kuwait City,Al Dana General Hospital,Emergency,Staff Responsiveness,64.7,69.0,12,17.8,208
+PXS-0007,2025-10,Bahrain,Manama,Gulf Gate Medical Centre,Inpatient,Discharge Information,87.2,84.0,44,10.5,156
+PXS-0008,2025-10,Oman,Muscat,Al Hajar Specialist Hospital,Outpatient,Nurse Communication,79.8,78.0,37,11.3,192
+PXS-0009,2025-11,Saudi Arabia,Dammam,Eastern Crescent Medical City,Maternity,Doctor Communication,85.4,80.0,57,8.9,174
+PXS-0010,2025-11,UAE,Sharjah,Al Qasr Community Hospital,Surgery,Care Transition,54.2,57.0,9,18.6,88
+PXS-0011,2025-12,Qatar,Doha,Pearl Medical City,Emergency,Medication Communication,71.6,66.0,42,11.1,223
+PXS-0012,2025-12,Oman,Salalah,Dhofar Coast Hospital,Inpatient,Staff Responsiveness,70.2,69.0,31,13.2,137
+PXS-0013,2025-07,Kuwait,Kuwait City,Al Dana General Hospital,Outpatient,Discharge Information,82.1,84.0,24,14.7,165
+PXS-0014,2025-08,Bahrain,Manama,Gulf Gate Medical Centre,Maternity,Nurse Communication,83.7,78.0,55,9.3,128
+PXS-0015,2025-09,Saudi Arabia,Riyadh,Al Noor Medical City,Surgery,Doctor Communication,76.4,80.0,21,15.1,201
+PXS-0016,2025-10,UAE,Dubai,Creekside Specialist Hospital,Emergency,Staff Responsiveness,68.1,69.0,29,13.8,294
+PXS-0017,2025-11,Oman,Muscat,Al Hajar Specialist Hospital,Inpatient,Medication Communication,73.5,66.0,46,10.2,149
+PXS-0018,2025-12,Saudi Arabia,Jeddah,Red Sea Specialist Hospital,Outpatient,Care Transition,63.8,57.0,50,9.7,258
+

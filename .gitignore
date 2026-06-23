@@ -1,0 +1,10 @@
+.spec/
+__pycache__/
+.pytest_cache/
+.venv/
+node_modules/
+.next/
+.env
+*.db
+*.sqlite3
+*.tsbuildinfo

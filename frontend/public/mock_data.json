@@ -1,0 +1,58 @@
+{
+  "generated_at": "2026-06-22T00:00:00Z",
+  "selected_hospital": "All Hospitals",
+  "selected_department": "All Departments",
+  "selected_month": "All Months",
+  "filters": {
+    "hospitals": ["All Hospitals", "Al Noor Medical City", "Gulfview Specialist", "Riyadh Central", "Marina Health Campus"],
+    "departments": ["All Departments", "Emergency", "Inpatient", "Outpatient", "Maternity", "Surgery"],
+    "months": ["All Months", "2025-07", "2025-08", "2025-09", "2025-10", "2025-11", "2025-12"]
+  },
+  "sidebar": {
+    "title": "Patient Satisfaction & Experience Intelligence Hub",
+    "rail_category": "Patient Experience",
+    "headline_metric": {"label": "Experience score", "value": "77.4", "detail": "+1.2 vs benchmark", "direction": "up"},
+    "why_this_matters": "Patient experience is the lagging indicator that reflects everything else in a hospital - this turns survey data into an actionable intelligence tool for Gulf accreditation teams.",
+    "who_controls": "Hospital leadership, quality improvement teams, accreditation bodies, and healthcare regulators influence outcomes through service standards, metric oversight, and operational improvement.",
+    "sources": [
+      {"name":"HCAHPS public benchmarks","url":"https://hcahpsonline.org/","authority":"CMS","quality":"High","refresh_cadence":"Quarterly","last_refreshed":"2026-06-22"},
+      {"name":"CMS Care Compare","url":"https://www.medicare.gov/care-compare/","authority":"U.S. CMS","quality":"High","refresh_cadence":"Quarterly","last_refreshed":"2026-06-22"},
+      {"name":"Saudi CBAHI standards","url":"https://portal.cbahi.gov.sa/","authority":"CBAHI","quality":"High","refresh_cadence":"Standards cycle","last_refreshed":"2026-06-22"},
+      {"name":"UAE DOH reports","url":"https://www.doh.gov.ae/","authority":"Abu Dhabi DOH","quality":"High","refresh_cadence":"Annual","last_refreshed":"2026-06-22"},
+      {"name":"NHS Friends & Family Test","url":"https://www.england.nhs.uk/fft/","authority":"NHS England","quality":"High","refresh_cadence":"Monthly","last_refreshed":"2026-06-22"}
+    ]
+  },
+  "metrics": [
+    {"label":"Experience score","value":"77.4","detail":"+1.2 vs benchmark","direction":"up"},
+    {"label":"NPS","value":"+41","detail":"Digital check-in cohort","direction":"up"},
+    {"label":"Responses","value":"3,482","detail":"Filtered survey coverage","direction":"neutral"},
+    {"label":"Trend","value":"+3.1","detail":"Points since July","direction":"up"}
+  ],
+  "domain_scores": [
+    {"domain":"Nurse Communication","score":81.4,"benchmark":78,"delta":3.4},
+    {"domain":"Doctor Communication","score":82.1,"benchmark":80,"delta":2.1},
+    {"domain":"Staff Responsiveness","score":68.2,"benchmark":69,"delta":-0.8},
+    {"domain":"Medication Communication","score":69.4,"benchmark":66,"delta":3.4},
+    {"domain":"Discharge Information","score":86.3,"benchmark":84,"delta":2.3},
+    {"domain":"Care Transition","score":58.9,"benchmark":57,"delta":1.9}
+  ],
+  "trends": [
+    {"month":"2025-07","department":"Emergency","score":70.1,"benchmark":72.3},{"month":"2025-08","department":"Emergency","score":71.3,"benchmark":72.3},{"month":"2025-09","department":"Emergency","score":72.0,"benchmark":72.3},{"month":"2025-10","department":"Emergency","score":73.2,"benchmark":72.3},{"month":"2025-11","department":"Emergency","score":74.1,"benchmark":72.3},{"month":"2025-12","department":"Emergency","score":75.0,"benchmark":72.3},
+    {"month":"2025-07","department":"Inpatient","score":74.0,"benchmark":72.3},{"month":"2025-08","department":"Inpatient","score":75.0,"benchmark":72.3},{"month":"2025-09","department":"Inpatient","score":75.4,"benchmark":72.3},{"month":"2025-10","department":"Inpatient","score":76.2,"benchmark":72.3},{"month":"2025-11","department":"Inpatient","score":77.0,"benchmark":72.3},{"month":"2025-12","department":"Inpatient","score":78.1,"benchmark":72.3},
+    {"month":"2025-07","department":"Outpatient","score":77.0,"benchmark":72.3},{"month":"2025-08","department":"Outpatient","score":77.6,"benchmark":72.3},{"month":"2025-09","department":"Outpatient","score":78.2,"benchmark":72.3},{"month":"2025-10","department":"Outpatient","score":78.4,"benchmark":72.3},{"month":"2025-11","department":"Outpatient","score":79.1,"benchmark":72.3},{"month":"2025-12","department":"Outpatient","score":80.0,"benchmark":72.3}
+  ],
+  "nps_cohorts": [
+    {"cohort":"Digital check-in","promoters":65,"passives":11,"detractors":24,"nps":41},{"cohort":"Standard admission","promoters":58,"passives":17,"detractors":25,"nps":33},{"cohort":"Post-discharge follow-up","promoters":68,"passives":9,"detractors":23,"nps":45},{"cohort":"Complex care","promoters":51,"passives":20,"detractors":29,"nps":22}
+  ],
+  "correlations": [
+    {"hospital":"Al Noor Medical City","satisfaction":82.1,"readmission_rate":10.8,"quartile":"Q1"},{"hospital":"Gulfview Specialist","satisfaction":78.4,"readmission_rate":12.2,"quartile":"Q2"},{"hospital":"Riyadh Central","satisfaction":74.2,"readmission_rate":14.1,"quartile":"Q3"},{"hospital":"Marina Health Campus","satisfaction":70.8,"readmission_rate":16.0,"quartile":"Q4"}
+  ],
+  "responsiveness": [
+    {"department":"Emergency","month":"2025-07","score":63,"status":"priority"},{"department":"Emergency","month":"2025-08","score":64,"status":"priority"},{"department":"Emergency","month":"2025-09","score":66,"status":"watch"},{"department":"Emergency","month":"2025-10","score":67,"status":"watch"},{"department":"Emergency","month":"2025-11","score":68,"status":"watch"},{"department":"Emergency","month":"2025-12","score":70,"status":"above"},
+    {"department":"Inpatient","month":"2025-07","score":68,"status":"watch"},{"department":"Inpatient","month":"2025-08","score":69,"status":"above"},{"department":"Inpatient","month":"2025-09","score":70,"status":"above"},{"department":"Inpatient","month":"2025-10","score":71,"status":"above"},{"department":"Inpatient","month":"2025-11","score":72,"status":"above"},{"department":"Inpatient","month":"2025-12","score":73,"status":"above"},
+    {"department":"Outpatient","month":"2025-07","score":71,"status":"above"},{"department":"Outpatient","month":"2025-08","score":72,"status":"above"},{"department":"Outpatient","month":"2025-09","score":73,"status":"above"},{"department":"Outpatient","month":"2025-10","score":74,"status":"above"},{"department":"Outpatient","month":"2025-11","score":75,"status":"above"},{"department":"Outpatient","month":"2025-12","score":76,"status":"above"},
+    {"department":"Maternity","month":"2025-07","score":74,"status":"above"},{"department":"Maternity","month":"2025-08","score":75,"status":"above"},{"department":"Maternity","month":"2025-09","score":76,"status":"above"},{"department":"Maternity","month":"2025-10","score":76,"status":"above"},{"department":"Maternity","month":"2025-11","score":77,"status":"above"},{"department":"Maternity","month":"2025-12","score":78,"status":"above"},
+    {"department":"Surgery","month":"2025-07","score":67,"status":"watch"},{"department":"Surgery","month":"2025-08","score":68,"status":"watch"},{"department":"Surgery","month":"2025-09","score":69,"status":"above"},{"department":"Surgery","month":"2025-10","score":70,"status":"above"},{"department":"Surgery","month":"2025-11","score":71,"status":"above"},{"department":"Surgery","month":"2025-12","score":72,"status":"above"}
+  ],
+  "insights": ["Medication Communication leads its benchmark by +3.4 points.", "Staff Responsiveness is the highest-priority opportunity at -0.8 points versus benchmark.", "The bottom satisfaction quartile carries 5.2 points more readmission risk than the top quartile."]
+}

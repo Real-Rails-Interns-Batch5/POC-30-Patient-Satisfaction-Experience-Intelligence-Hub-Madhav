@@ -1,0 +1,1329 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+.gitattributes
+.gitignore
+backend/app/__init__.py
+backend/app/adapters/__init__.py
+backend/app/adapters/base.py
+backend/app/adapters/sources.py
+backend/app/data_service.py
+backend/app/main.py
+backend/app/schemas.py
+backend/README.md
+backend/requirements.txt
+backend/tests/test_api.py
+frontend/.env.example
+frontend/app/globals.css
+frontend/app/layout.tsx
+frontend/app/page.tsx
+frontend/components/charts.tsx
+frontend/components/dashboard.tsx
+frontend/components/intelligence-sidebar.tsx
+frontend/components/ui/button.tsx
+frontend/components/ui/card.tsx
+frontend/components/ui/select.tsx
+frontend/lib/api.ts
+frontend/lib/types.ts
+frontend/next-env.d.ts
+frontend/next.config.mjs
+frontend/package.json
+frontend/postcss.config.mjs
+frontend/public/mock_data.json
+frontend/tailwind.config.ts
+frontend/tsconfig.json
+mock_data/patient_experience_synthetic_data_dictionary.md
+mock_data/patient_experience_synthetic.csv
+mock_data/patient_experience_synthetic.json
+README.md
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path=".gitignore">
+.spec/
+__pycache__/
+.pytest_cache/
+.venv/
+node_modules/
+.next/
+.env
+*.db
+*.sqlite3
+*.tsbuildinfo
+</file>
+
+<file path="backend/app/__init__.py">
+
+</file>
+
+<file path="backend/app/adapters/__init__.py">
+from .sources import source_catalog
+
+__all__ = ["source_catalog"]
+</file>
+
+<file path="backend/app/adapters/base.py">
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class SourceMetadata:
+    name: str
+    url: str
+    authority: str
+    quality: str
+    refresh_cadence: str
+    last_refreshed: str
+
+
+class SourceAdapter(ABC):
+    """Shared contract for source-specific ETL adapters used across PoCs."""
+
+    @abstractmethod
+    def metadata(self) -> SourceMetadata:
+        raise NotImplementedError
+</file>
+
+<file path="backend/app/adapters/sources.py">
+from dataclasses import dataclass
+
+from .base import SourceAdapter, SourceMetadata
+
+
+@dataclass(frozen=True)
+class CatalogAdapter(SourceAdapter):
+    source: SourceMetadata
+
+    def metadata(self) -> SourceMetadata:
+        return self.source
+
+
+_ADAPTERS = [
+    CatalogAdapter(SourceMetadata("HCAHPS public benchmarks", "https://hcahpsonline.org/", "CMS", "High", "Quarterly", "2026-06-22")),
+    CatalogAdapter(SourceMetadata("CMS Care Compare", "https://www.medicare.gov/care-compare/", "U.S. CMS", "High", "Quarterly", "2026-06-22")),
+    CatalogAdapter(SourceMetadata("Saudi CBAHI standards", "https://portal.cbahi.gov.sa/", "CBAHI", "High", "Standards cycle", "2026-06-22")),
+    CatalogAdapter(SourceMetadata("UAE DOH reports", "https://www.doh.gov.ae/", "Abu Dhabi DOH", "High", "Annual", "2026-06-22")),
+    CatalogAdapter(SourceMetadata("NHS Friends & Family Test", "https://www.england.nhs.uk/fft/", "NHS England", "High", "Monthly", "2026-06-22")),
+]
+
+
+def source_catalog() -> list[SourceMetadata]:
+    return [adapter.metadata() for adapter in _ADAPTERS]
+</file>
+
+<file path="backend/app/data_service.py">
+from __future__ import annotations
+
+from datetime import UTC, datetime
+from functools import lru_cache
+from math import sin
+
+import pandas as pd
+
+from .adapters import source_catalog
+from .schemas import (
+    CorrelationPoint,
+    DashboardResponse,
+    DomainScore,
+    FilterOptions,
+    HeatmapCell,
+    Metric,
+    NpsCohort,
+    Sidebar,
+    TrendPoint,
+)
+
+HOSPITALS = ["Al Noor Medical City", "Gulfview Specialist", "Riyadh Central", "Marina Health Campus"]
+DEPARTMENTS = ["Emergency", "Inpatient", "Outpatient", "Maternity", "Surgery"]
+MONTHS = ["2025-07", "2025-08", "2025-09", "2025-10", "2025-11", "2025-12"]
+DOMAINS = [
+    "Nurse Communication",
+    "Doctor Communication",
+    "Staff Responsiveness",
+    "Medication Communication",
+    "Discharge Information",
+    "Care Transition",
+]
+BENCHMARKS = {
+    "Nurse Communication": 78.0,
+    "Doctor Communication": 80.0,
+    "Staff Responsiveness": 69.0,
+    "Medication Communication": 66.0,
+    "Discharge Information": 84.0,
+    "Care Transition": 57.0,
+}
+
+
+@lru_cache(maxsize=1)
+def survey_frame() -> pd.DataFrame:
+    rows: list[dict] = []
+    for hi, hospital in enumerate(HOSPITALS):
+        for di, department in enumerate(DEPARTMENTS):
+            for mi, month in enumerate(MONTHS):
+                for oi, domain in enumerate(DOMAINS):
+                    score = BENCHMARKS[domain] + (2.8 - hi * 1.7) + (mi - 2) * 0.65
+                    score += (di - 2) * 0.55 + sin((hi + 1) * (di + 2) * (mi + oi + 1)) * 2.3
+                    rows.append(
+                        {
+                            "hospital": hospital,
+                            "department": department,
+                            "month": month,
+                            "domain": domain,
+                            "score": round(max(48, min(94, score)), 1),
+                            "benchmark": BENCHMARKS[domain],
+                            "responses": 82 + hi * 19 + di * 13 + mi * 7 + oi * 3,
+                        }
+                    )
+    return pd.DataFrame(rows)
+
+
+def _filtered(frame: pd.DataFrame, hospital: str, department: str, month: str) -> pd.DataFrame:
+    result = frame
+    if hospital != "All Hospitals":
+        result = result[result["hospital"] == hospital]
+    if department != "All Departments":
+        result = result[result["department"] == department]
+    if month != "All Months":
+        result = result[result["month"] == month]
+    return result
+
+
+def build_dashboard(hospital: str, department: str, month: str) -> DashboardResponse:
+    frame = survey_frame()
+    selected = _filtered(frame, hospital, department, month)
+    radar_hospital = HOSPITALS[0] if hospital == "All Hospitals" else hospital
+    radar = frame[frame["hospital"] == radar_hospital]
+    if department != "All Departments":
+        radar = radar[radar["department"] == department]
+    if month != "All Months":
+        radar = radar[radar["month"] == month]
+
+    domain_group = radar.groupby("domain", as_index=False).agg(score=("score", "mean"), benchmark=("benchmark", "mean"))
+    domain_scores = [
+        DomainScore(domain=r.domain, score=round(r.score, 1), benchmark=round(r.benchmark, 1), delta=round(r.score - r.benchmark, 1))
+        for r in domain_group.itertuples()
+    ]
+
+    trend_source = frame if hospital == "All Hospitals" else frame[frame["hospital"] == hospital]
+    if department != "All Departments":
+        trend_source = trend_source[trend_source["department"] == department]
+    trend_group = trend_source.groupby(["month", "department"], as_index=False).agg(score=("score", "mean"), benchmark=("benchmark", "mean"))
+    trends = [TrendPoint(month=r.month, department=r.department, score=round(r.score, 1), benchmark=round(r.benchmark, 1)) for r in trend_group.itertuples()]
+
+    average = float(selected["score"].mean())
+    response_count = int(selected.drop_duplicates(["hospital", "department", "month"])["responses"].sum())
+    previous_months = MONTHS[:-1]
+    earliest = float(trend_source[trend_source["month"] == previous_months[0]]["score"].mean())
+    latest = float(trend_source[trend_source["month"] == MONTHS[-1]]["score"].mean())
+    movement = latest - earliest
+
+    nps_cohorts: list[NpsCohort] = []
+    cohort_names = ["Digital check-in", "Standard admission", "Post-discharge follow-up", "Complex care"]
+    base = int(round(average - 48))
+    for index, cohort in enumerate(cohort_names):
+        nps = max(-20, min(72, base + [12, 1, 18, -8][index]))
+        promoters = 48 + nps // 2
+        detractors = promoters - nps
+        passives = 100 - promoters - detractors
+        nps_cohorts.append(NpsCohort(cohort=cohort, promoters=promoters, passives=passives, detractors=detractors, nps=nps))
+
+    hospital_scores = frame.groupby("hospital", as_index=False)["score"].mean().sort_values("score", ascending=False).reset_index(drop=True)
+    correlations: list[CorrelationPoint] = []
+    for index, row in hospital_scores.iterrows():
+        readmission = round(18.8 - (row["score"] - 65) * 0.34 + index * 0.15, 1)
+        correlations.append(CorrelationPoint(hospital=row["hospital"], satisfaction=round(row["score"], 1), readmission_rate=readmission, quartile=f"Q{index + 1}"))
+
+    heat_source = frame[frame["domain"] == "Staff Responsiveness"]
+    if hospital != "All Hospitals":
+        heat_source = heat_source[heat_source["hospital"] == hospital]
+    heat_group = heat_source.groupby(["department", "month"], as_index=False)["score"].mean()
+    responsiveness = [
+        HeatmapCell(
+            department=r.department,
+            month=r.month,
+            score=round(r.score, 1),
+            status="above" if r.score >= BENCHMARKS["Staff Responsiveness"] else "watch" if r.score >= 66 else "priority",
+        )
+        for r in heat_group.itertuples()
+    ]
+
+    best_domain = max(domain_scores, key=lambda item: item.delta)
+    risk_domain = min(domain_scores, key=lambda item: item.delta)
+    readmission_spread = correlations[-1].readmission_rate - correlations[0].readmission_rate
+    metrics = [
+        Metric(label="Experience score", value=f"{average:.1f}", detail=f"{average - selected['benchmark'].mean():+.1f} vs benchmark", direction="up" if average >= selected["benchmark"].mean() else "down"),
+        Metric(label="NPS", value=f"{nps_cohorts[0].nps:+d}", detail="Digital check-in cohort", direction="up" if nps_cohorts[0].nps >= 0 else "down"),
+        Metric(label="Responses", value=f"{response_count:,}", detail="Filtered survey coverage", direction="neutral"),
+        Metric(label="Trend", value=f"{movement:+.1f}", detail="Points since July", direction="up" if movement >= 0 else "down"),
+    ]
+
+    sidebar = Sidebar(
+        title="Patient Satisfaction & Experience Intelligence Hub",
+        rail_category="Patient Experience",
+        headline_metric=metrics[0],
+        why_this_matters="Patient experience is the lagging indicator that reflects everything else in a hospital - this turns survey data into an actionable intelligence tool for Gulf accreditation teams.",
+        who_controls="Hospital leadership, quality improvement teams, accreditation bodies, and healthcare regulators influence outcomes through service standards, metric oversight, and operational improvement.",
+        sources=[source.__dict__ for source in source_catalog()],
+    )
+    insights = [
+        f"{best_domain.domain} leads its benchmark by {best_domain.delta:+.1f} points.",
+        f"{risk_domain.domain} is the highest-priority opportunity at {risk_domain.delta:+.1f} points versus benchmark.",
+        f"The bottom satisfaction quartile carries {readmission_spread:.1f} points more readmission risk than the top quartile.",
+    ]
+    return DashboardResponse(
+        generated_at=datetime.now(UTC).isoformat(),
+        selected_hospital=hospital,
+        selected_department=department,
+        selected_month=month,
+        filters=FilterOptions(hospitals=["All Hospitals", *HOSPITALS], departments=["All Departments", *DEPARTMENTS], months=["All Months", *MONTHS]),
+        sidebar=sidebar,
+        metrics=metrics,
+        domain_scores=domain_scores,
+        trends=trends,
+        nps_cohorts=nps_cohorts,
+        correlations=correlations,
+        responsiveness=responsiveness,
+        insights=insights,
+    )
+
+
+def sample_csv() -> str:
+    return "SYNTHETIC DATA - NOT REAL\n" + survey_frame().head(250).to_csv(index=False)
+
+
+def sample_json() -> str:
+    return survey_frame().head(250).to_json(orient="records", indent=2)
+</file>
+
+<file path="backend/app/main.py">
+from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import PlainTextResponse, Response
+
+from .data_service import DEPARTMENTS, HOSPITALS, MONTHS, build_dashboard, sample_csv, sample_json
+from .schemas import DashboardResponse
+
+app = FastAPI(title="Patient Experience Intelligence API", version="1.0.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_origin_regex=r"http://localhost:\d+",
+    allow_credentials=True,
+    allow_methods=["GET"],
+    allow_headers=["*"],
+)
+
+
+@app.get("/api/health")
+def health() -> dict[str, str]:
+    return {"status": "ok", "service": "patient-experience-intelligence"}
+
+
+@app.get("/api/dashboard", response_model=DashboardResponse)
+def dashboard(
+    hospital: str = Query("All Hospitals"),
+    department: str = Query("All Departments"),
+    month: str = Query("All Months"),
+) -> DashboardResponse:
+    valid = hospital in ["All Hospitals", *HOSPITALS] and department in ["All Departments", *DEPARTMENTS] and month in ["All Months", *MONTHS]
+    if not valid:
+        raise HTTPException(status_code=422, detail="Unknown filter value")
+    return build_dashboard(hospital, department, month)
+
+
+@app.get("/api/sample.csv", response_class=PlainTextResponse)
+def download_sample() -> PlainTextResponse:
+    return PlainTextResponse(
+        sample_csv(),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=patient_experience_sample.csv"},
+    )
+
+
+@app.get("/api/sample.json")
+def download_sample_json() -> Response:
+    return Response(
+        content='{"synthetic_data_notice":"SYNTHETIC DATA - NOT REAL","records":' + sample_json() + "}",
+        media_type="application/json",
+        headers={"Content-Disposition": "attachment; filename=patient_experience_synthetic.json"},
+    )
+</file>
+
+<file path="backend/app/schemas.py">
+from pydantic import BaseModel
+
+
+class Metric(BaseModel):
+    label: str
+    value: str
+    detail: str
+    direction: str
+
+
+class DomainScore(BaseModel):
+    domain: str
+    score: float
+    benchmark: float
+    delta: float
+
+
+class TrendPoint(BaseModel):
+    month: str
+    department: str
+    score: float
+    benchmark: float
+
+
+class NpsCohort(BaseModel):
+    cohort: str
+    promoters: int
+    passives: int
+    detractors: int
+    nps: int
+
+
+class CorrelationPoint(BaseModel):
+    hospital: str
+    satisfaction: float
+    readmission_rate: float
+    quartile: str
+
+
+class HeatmapCell(BaseModel):
+    department: str
+    month: str
+    score: float
+    status: str
+
+
+class FilterOptions(BaseModel):
+    hospitals: list[str]
+    departments: list[str]
+    months: list[str]
+
+
+class SourceQuality(BaseModel):
+    name: str
+    url: str
+    authority: str
+    quality: str
+    refresh_cadence: str
+    last_refreshed: str
+
+
+class Sidebar(BaseModel):
+    title: str
+    rail_category: str
+    headline_metric: Metric
+    why_this_matters: str
+    who_controls: str
+    sources: list[SourceQuality]
+
+
+class DashboardResponse(BaseModel):
+    generated_at: str
+    selected_hospital: str
+    selected_department: str
+    selected_month: str
+    filters: FilterOptions
+    sidebar: Sidebar
+    metrics: list[Metric]
+    domain_scores: list[DomainScore]
+    trends: list[TrendPoint]
+    nps_cohorts: list[NpsCohort]
+    correlations: list[CorrelationPoint]
+    responsiveness: list[HeatmapCell]
+    insights: list[str]
+</file>
+
+<file path="backend/README.md">
+# Patient Experience Intelligence API
+
+```powershell
+python -m venv .venv
+.venv\Scripts\pip install -r requirements.txt
+.venv\Scripts\uvicorn app.main:app --reload --port 8000
+```
+
+Interactive API documentation is available at `http://localhost:8000/docs`.
+</file>
+
+<file path="backend/requirements.txt">
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pandas==2.2.3
+pydantic==2.10.4
+pytest==8.3.4
+httpx==0.28.1
+</file>
+
+<file path="backend/tests/test_api.py">
+from fastapi.testclient import TestClient
+
+from app.main import app
+
+client = TestClient(app)
+
+
+def test_health() -> None:
+    response = client.get("/api/health")
+    assert response.status_code == 200
+    assert response.json()["status"] == "ok"
+
+
+def test_dashboard_contract_and_intelligence() -> None:
+    response = client.get("/api/dashboard")
+    assert response.status_code == 200
+    payload = response.json()
+    assert len(payload["domain_scores"]) == 6
+    assert len(payload["nps_cohorts"]) == 4
+    assert len(payload["correlations"]) == 4
+    assert len(payload["insights"]) == 3
+    assert payload["sidebar"]["headline_metric"]["detail"]
+    assert all("delta" in item for item in payload["domain_scores"])
+
+
+def test_filters_change_results() -> None:
+    baseline = client.get("/api/dashboard").json()
+    filtered = client.get(
+        "/api/dashboard",
+        params={"hospital": "Riyadh Central", "department": "Emergency", "month": "2025-12"},
+    ).json()
+    assert filtered["selected_hospital"] == "Riyadh Central"
+    assert filtered["selected_department"] == "Emergency"
+    assert filtered["metrics"][0]["value"] != baseline["metrics"][0]["value"]
+
+
+def test_invalid_filter_is_rejected() -> None:
+    response = client.get("/api/dashboard", params={"hospital": "Unknown"})
+    assert response.status_code == 422
+
+
+def test_sample_download() -> None:
+    response = client.get("/api/sample.csv")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/csv")
+    assert response.text.startswith("SYNTHETIC DATA - NOT REAL")
+    assert "hospital,department,month,domain" in response.text
+
+
+def test_json_sample_download_is_labeled() -> None:
+    response = client.get("/api/sample.json")
+    assert response.status_code == 200
+    assert response.json()["synthetic_data_notice"] == "SYNTHETIC DATA - NOT REAL"
+    assert len(response.json()["records"]) == 250
+</file>
+
+<file path="frontend/.env.example">
+NEXT_PUBLIC_API_URL=http://localhost:8000
+</file>
+
+<file path="frontend/app/globals.css">
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: dark; }
+* { box-sizing: border-box; }
+html {
+  background: #030712;
+  font-size: 112.5%;
+}
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 30% -10%, rgba(56, 189, 248, 0.09), transparent 33rem),
+    #030712;
+  color: #e5e7eb;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: -0.015em;
+}
+button, select { font: inherit; }
+select { color-scheme: dark; }
+.terminal-grid {
+  background-image: linear-gradient(rgba(31,41,55,.16) 1px, transparent 1px), linear-gradient(90deg, rgba(31,41,55,.16) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+.scrollbar::-webkit-scrollbar { width: 5px; }
+.scrollbar::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 10px; }
+</file>
+
+<file path="frontend/app/layout.tsx">
+import type { Metadata } from "next";
+import "./globals.css";
+
+export const metadata: Metadata = {
+  title: "Patient Experience Intelligence Hub",
+  description: "Actionable HCAHPS, NPS and readmission intelligence for hospital quality teams.",
+};
+
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
+}
+</file>
+
+<file path="frontend/app/page.tsx">
+import { Dashboard } from "@/components/dashboard";
+
+export default function Home() {
+  return <Dashboard />;
+}
+</file>
+
+<file path="frontend/components/charts.tsx">
+"use client";
+
+import dynamic from "next/dynamic";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Line,
+  LineChart,
+  PolarAngleAxis,
+  PolarGrid,
+  PolarRadiusAxis,
+  Radar,
+  RadarChart,
+  ResponsiveContainer,
+  Scatter,
+  ScatterChart,
+  Tooltip,
+  XAxis,
+  YAxis,
+  ZAxis,
+} from "recharts";
+import type { DashboardData } from "@/lib/types";
+
+const ReactECharts = dynamic(() => import("echarts-for-react"), { ssr: false });
+const axis = { fill: "#cbd5e1", fontSize: 12 };
+const tooltipStyle = { background: "#071019", border: "1px solid #1f2937", borderRadius: 8, color: "#e5e7eb", fontSize: 13 };
+
+function WaterfallTooltip({ active, payload, label }: any) {
+  if (active && payload && payload.length) {
+    return (
+      <div className="rounded-lg border border-stroke bg-surface/95 p-3 shadow-xl backdrop-blur-md">
+        <p className="text-xs font-semibold text-white mb-1.5">{label}</p>
+        <div className="text-[11px] text-slate-300">
+          <span className="text-slate-400">NPS score: </span>
+          <span className="font-semibold text-rail">{payload[0].value > 0 ? `+${payload[0].value}` : payload[0].value}</span>
+        </div>
+      </div>
+    );
+  }
+  return null;
+}
+
+function ScatterTooltip({ active, payload }: any) {
+  if (active && payload && payload.length) {
+    const point = payload[0].payload;
+    return (
+      <div className="rounded-lg border border-stroke bg-surface/95 p-3 shadow-xl backdrop-blur-md">
+        <p className="text-xs font-semibold text-white mb-1.5">{point.hospital}</p>
+        <div className="space-y-0.5 text-[11px]">
+          <div className="text-slate-300">
+            <span className="text-slate-400">Satisfaction: </span>
+            <span className="font-semibold text-rail">{point.satisfaction}%</span>
+          </div>
+          <div className="text-slate-300">
+            <span className="text-slate-400">Readmission: </span>
+            <span className="font-semibold text-indigo">{point.readmission_rate}%</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return null;
+}
+
+export function DomainRadar({ data }: { data: DashboardData["domain_scores"] }) {
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <RadarChart data={data} outerRadius="70%">
+        <PolarGrid stroke="#1f2937" />
+        <PolarAngleAxis dataKey="domain" tick={{ ...axis, fontSize: 11 }} />
+        <PolarRadiusAxis angle={30} domain={[40, 100]} tick={axis} axisLine={false} />
+        <Tooltip contentStyle={tooltipStyle} itemStyle={{ color: '#cbd5e1' }} labelStyle={{ color: '#ffffff', fontWeight: 600 }} formatter={(value: number, name: string) => [`${value.toFixed(1)}%`, name === "score" ? "Hospital" : "Benchmark"]} />
+        <Radar name="Hospital" dataKey="score" stroke="#38BDF8" fill="#38BDF8" fillOpacity={0.24} strokeWidth={2} isAnimationActive />
+        <Radar name="Benchmark" dataKey="benchmark" stroke="#818CF8" fill="#818CF8" fillOpacity={0.07} strokeDasharray="4 4" isAnimationActive />
+        <Legend wrapperStyle={{ fontSize: 12 }} />
+      </RadarChart>
+    </ResponsiveContainer>
+  );
+}
+
+export function SatisfactionTrend({ data }: { data: DashboardData["trends"] }) {
+  const departments = Array.from(new Set(data.map((item) => item.department)));
+  const colors = ["#38BDF8", "#818CF8", "#22d3ee", "#a78bfa", "#34d399"];
+  const rows = Array.from(new Set(data.map((item) => item.month))).map((month) => {
+    const row: Record<string, string | number> = { month: month.slice(5) };
+    data.filter((item) => item.month === month).forEach((item) => { row[item.department] = item.score; });
+    return row;
+  });
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <LineChart data={rows} margin={{ top: 8, right: 10, left: -22, bottom: 0 }}>
+        <CartesianGrid stroke="#16202b" vertical={false} />
+        <XAxis dataKey="month" tick={axis} axisLine={false} tickLine={false} />
+        <YAxis domain={[55, 90]} tick={axis} axisLine={false} tickLine={false} />
+        <Tooltip contentStyle={tooltipStyle} itemStyle={{ color: '#cbd5e1' }} labelStyle={{ color: '#ffffff', fontWeight: 600 }} />
+        {departments.map((department, index) => <Line key={department} type="monotone" dataKey={department} stroke={colors[index % colors.length]} strokeWidth={2} dot={false} activeDot={{ r: 4 }} isAnimationActive />)}
+      </LineChart>
+    </ResponsiveContainer>
+  );
+}
+
+export function NpsWaterfall({ data }: { data: DashboardData["nps_cohorts"] }) {
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart data={data} margin={{ top: 8, right: 8, left: -20, bottom: 8 }}>
+        <CartesianGrid stroke="#16202b" vertical={false} />
+        <XAxis dataKey="cohort" tick={{ ...axis, fontSize: 10 }} interval={0} tickFormatter={(value) => value.split(" ")[0]} axisLine={false} />
+        <YAxis tick={axis} axisLine={false} />
+        <Tooltip content={<WaterfallTooltip />} />
+        <Bar dataKey="nps" radius={[4, 4, 0, 0]} isAnimationActive>{data.map((item) => <Cell key={item.cohort} fill={item.nps >= 35 ? "#38BDF8" : item.nps >= 25 ? "#818CF8" : "#f59e0b"} />)}</Bar>
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
+export function CorrelationScatter({ data }: { data: DashboardData["correlations"] }) {
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <ScatterChart margin={{ top: 12, right: 12, left: -12, bottom: 4 }}>
+        <CartesianGrid stroke="#16202b" />
+        <XAxis type="number" dataKey="satisfaction" name="Satisfaction" unit="%" domain={[65, 86]} tick={axis} />
+        <YAxis type="number" dataKey="readmission_rate" name="Readmission" unit="%" domain={[8, 18]} tick={axis} />
+        <ZAxis range={[90, 90]} />
+        <Tooltip cursor={{ strokeDasharray: "3 3" }} content={<ScatterTooltip />} />
+        <Scatter data={data} fill="#38BDF8" isAnimationActive>{data.map((item, index) => <Cell key={item.hospital} fill={["#38BDF8", "#67e8f9", "#818CF8", "#a78bfa"][index]} />)}</Scatter>
+      </ScatterChart>
+    </ResponsiveContainer>
+  );
+}
+
+export function ResponsivenessHeatmap({ data }: { data: DashboardData["responsiveness"] }) {
+  const months = Array.from(new Set(data.map((item) => item.month)));
+  const departments = Array.from(new Set(data.map((item) => item.department)));
+  const points = data.map((item) => [months.indexOf(item.month), departments.indexOf(item.department), item.score]);
+  const option = {
+    backgroundColor: "transparent",
+    animation: true,
+    animationDuration: 450,
+    tooltip: { position: "top", backgroundColor: "#071019", borderColor: "#1f2937", textStyle: { color: "#e5e7eb", fontSize: 13 }, formatter: (params: { value: number[] }) => `${departments[params.value[1]]}<br/>${months[params.value[0]]}: <b>${params.value[2].toFixed(1)}%</b>` },
+    grid: { left: 72, right: 20, top: 8, bottom: 32 },
+    xAxis: { type: "category", data: months.map((month) => month.slice(5)), splitArea: { show: true }, axisLabel: { color: "#cbd5e1", fontSize: 11 }, axisLine: { lineStyle: { color: "#1f2937" } } },
+    yAxis: { type: "category", data: departments, splitArea: { show: true }, axisLabel: { color: "#cbd5e1", fontSize: 11 }, axisLine: { lineStyle: { color: "#1f2937" } } },
+    visualMap: { min: 60, max: 82, calculable: false, orient: "horizontal", left: "center", bottom: -5, show: false, inRange: { color: ["#7f1d1d", "#b45309", "#164e63", "#38BDF8"] } },
+    series: [{ type: "heatmap", data: points, label: { show: true, color: "#e5e7eb", fontSize: 11, formatter: (params: { value: number[] }) => params.value[2].toFixed(0) }, emphasis: { itemStyle: { shadowBlur: 10, shadowColor: "rgba(56,189,248,.45)" } } }],
+  };
+  return <ReactECharts option={option} style={{ height: "100%", width: "100%" }} notMerge />;
+}
+</file>
+
+<file path="frontend/components/dashboard.tsx">
+"use client";
+
+import { useEffect, useState } from "react";
+import { Activity, ArrowDownRight, ArrowUpRight, Minus, Sparkles } from "lucide-react";
+import fallback from "@/public/mock_data.json";
+import { getDashboard } from "@/lib/api";
+import type { DashboardData, Metric } from "@/lib/types";
+import { CorrelationScatter, DomainRadar, NpsWaterfall, ResponsivenessHeatmap, SatisfactionTrend } from "./charts";
+import { IntelligenceSidebar } from "./intelligence-sidebar";
+import { Card } from "./ui/card";
+
+const initial = fallback as DashboardData;
+const initialFilters = { hospital: "All Hospitals", department: "All Departments", month: "All Months" };
+
+function MetricCard({ metric }: { metric: Metric }) {
+  const Icon = metric.direction === "up" ? ArrowUpRight : metric.direction === "down" ? ArrowDownRight : Minus;
+  const tone = metric.direction === "down" ? "text-amber-400" : metric.direction === "up" ? "text-rail" : "text-slate-400";
+  return <Card className="min-w-0 p-4"><div className="flex items-center justify-between text-[0.625rem] uppercase tracking-[.14em] text-slate-300"><span>{metric.label}</span><Icon size={16} className={tone} /></div><div className="mt-3 text-3xl font-semibold tabular-nums text-white">{metric.value}</div><p className="mt-1 truncate text-[0.625rem] text-slate-400">{metric.detail}</p></Card>;
+}
+
+function ChartCard({ title, eyebrow, children, className = "" }: { title: string; eyebrow: string; children: React.ReactNode; className?: string }) {
+  return <Card className={`min-h-0 p-4 ${className}`}><div className="mb-2 flex items-center justify-between"><div><p className="text-[0.5625rem] font-semibold uppercase tracking-[.17em] text-rail">{eyebrow}</p><h2 className="mt-1 text-base font-medium text-slate-100">{title}</h2></div><Activity size={16} className="text-slate-400" /></div><div className="h-[calc(100%-42px)] min-h-[180px]">{children}</div></Card>;
+}
+
+function SignalLegend() {
+  return (
+    <div className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-lg border border-stroke bg-surface/70 px-4 py-2 text-[0.625rem] text-slate-200" aria-label="Chart legend">
+      <span className="font-semibold uppercase tracking-[.15em] text-slate-300">Legend</span>
+      <span className="flex items-center gap-2"><i className="h-2 w-2 rounded-full bg-rail" />Current score</span>
+      <span className="flex items-center gap-2"><i className="h-2 w-2 rounded-full bg-indigo" />Benchmark / comparison</span>
+      <span className="flex items-center gap-2"><i className="h-2 w-2 rounded-full bg-amber-500" />Watch</span>
+      <span className="flex items-center gap-2"><i className="h-2 w-2 rounded-full bg-red-800" />Priority</span>
+    </div>
+  );
+}
+
+export function Dashboard() {
+  const [data, setData] = useState<DashboardData>(initial);
+  const [filters, setFilters] = useState(initialFilters);
+  const [isFallback, setFallback] = useState(true);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    getDashboard(filters, controller.signal).then((result) => { setData(result.data); setFallback(result.isFallback); setLoading(false); }).catch(() => setLoading(false));
+    return () => controller.abort();
+  }, [filters]);
+
+  const onFilter = (key: keyof typeof filters, value: string) => setFilters((current) => ({ ...current, [key]: value }));
+  return (
+    <main className="flex min-h-screen flex-col bg-obsidian lg:h-screen lg:flex-row lg:overflow-hidden">
+      <section className="terminal-grid scrollbar flex min-h-screen flex-col overflow-y-auto px-5 py-5 lg:h-screen lg:w-[70%] lg:min-w-0 lg:px-6">
+        <header className="mb-4 flex items-center justify-between">
+          <div><div className="flex items-center gap-2 text-[0.625rem] font-semibold uppercase tracking-[.2em] text-slate-300"><Sparkles size={14} className="text-rail" /> Experience signal room</div><h2 className="mt-1 text-xl font-medium text-white">Operational experience telemetry</h2></div>
+          <div className="hidden items-center gap-2 text-[0.625rem] text-slate-300 sm:flex"><span className={`h-1.5 w-1.5 rounded-full ${loading ? "animate-pulse bg-amber-400" : "bg-emerald-400"}`} />{loading ? "Synchronizing" : "Signals current"}</div>
+        </header>
+        <div className="mb-4 grid grid-cols-2 gap-3 xl:grid-cols-4">{data.metrics.map((metric) => <MetricCard key={metric.label} metric={metric} />)}</div>
+        <SignalLegend />
+        <div className="grid flex-none auto-rows-[28rem] grid-cols-1 gap-4">
+          <ChartCard eyebrow="HCAHPS domains" title={`Benchmark profile - ${data.selected_hospital}`}><DomainRadar data={data.domain_scores} /></ChartCard>
+          <ChartCard eyebrow="Department signal" title="Satisfaction trend"><SatisfactionTrend data={data.trends} /></ChartCard>
+          <ChartCard eyebrow="Cohort loyalty" title="NPS cohort waterfall"><NpsWaterfall data={data.nps_cohorts} /></ChartCard>
+          <ChartCard eyebrow="Outcome linkage" title="Satisfaction vs readmission"><CorrelationScatter data={data.correlations} /></ChartCard>
+          <ChartCard eyebrow="Service friction" title="Staff responsiveness heatmap"><ResponsivenessHeatmap data={data.responsiveness} /></ChartCard>
+        </div>
+      </section>
+      <IntelligenceSidebar data={data} filters={filters} onFilter={onFilter} isFallback={isFallback} loading={loading} />
+    </main>
+  );
+}
+</file>
+
+<file path="frontend/components/intelligence-sidebar.tsx">
+"use client";
+
+import { Download, ExternalLink, FileJson, Landmark, Radio, Search, ShieldCheck } from "lucide-react";
+import { useMemo, useState } from "react";
+import type { DashboardData } from "@/lib/types";
+import { sampleDownloadUrls } from "@/lib/api";
+import { Button } from "./ui/button";
+import { Card } from "./ui/card";
+import { Select } from "./ui/select";
+
+interface Props {
+  data: DashboardData;
+  filters: { hospital: string; department: string; month: string };
+  onFilter: (key: "hospital" | "department" | "month", value: string) => void;
+  isFallback: boolean;
+  loading: boolean;
+}
+
+function Label({ children }: { children: React.ReactNode }) {
+  return <div className="mb-2 text-[0.625rem] font-semibold uppercase tracking-[.18em] text-slate-300">{children}</div>;
+}
+
+export function IntelligenceSidebar({ data, filters, onFilter, isFallback, loading }: Props) {
+  const [search, setSearch] = useState("");
+  const searchResults = useMemo(
+      () => search.trim().length < 2 ? [] : data.filters.hospitals.filter((hospital) => hospital !== "All Hospitals" && hospital.toLowerCase().includes(search.toLowerCase())),
+      [data.filters.hospitals, search],
+  );
+
+  const download = (format: "csv" | "json") => {
+    if (isFallback) {
+      const link = document.createElement("a");
+      if (format === "json") {
+        link.href = "/mock_data.json";
+        link.download = "patient_experience_synthetic.json";
+      } else {
+        const header = "SYNTHETIC DATA - NOT REAL\ndomain,score_pct,benchmark_pct,delta_pct\n";
+        const rows = data.domain_scores.map((item) => `${item.domain},${item.score},${item.benchmark},${item.delta}`).join("\n");
+        link.href = URL.createObjectURL(new Blob([header + rows], { type: "text/csv" }));
+        link.download = "patient_experience_synthetic.csv";
+      }
+      link.click();
+      return;
+    }
+    window.location.href = sampleDownloadUrls[format];
+  };
+  return (
+    <aside className="scrollbar flex h-screen flex-col overflow-y-auto border-l border-stroke bg-[#060b11]/95 px-5 py-6 lg:w-[30%] lg:min-w-[340px]">
+      <section className="border-b border-stroke pb-6">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-[0.625rem] font-semibold uppercase tracking-[.2em] text-rail"><Radio size={15} className="animate-pulse" /> Rail 30 / Live</div>
+          <span className={`rounded-full border px-2 py-1 text-[0.5625rem] uppercase tracking-wider ${isFallback ? "border-amber-500/30 text-amber-400" : "border-emerald-500/30 text-emerald-400"}`}>{isFallback ? "Mock fallback" : "API connected"}</span>
+        </div>
+        <p className="mb-2 text-sm text-indigo">{data.sidebar.rail_category}</p>
+        <h1 className="text-2xl font-semibold leading-tight text-white">{data.sidebar.title}</h1>
+        <div className="mt-5 flex items-end justify-between rounded-lg border border-rail/25 bg-rail/[.055] p-4 shadow-pulse">
+          <div><Label>{data.sidebar.headline_metric.label}</Label><div className="text-5xl font-semibold tabular-nums text-white">{data.sidebar.headline_metric.value}</div></div>
+          <span className="text-sm font-medium text-rail">{data.sidebar.headline_metric.detail}</span>
+        </div>
+      </section>
+
+      <section className="border-b border-stroke py-5">
+        <Label>Why this matters</Label>
+        <div className="flex gap-3"><ShieldCheck size={20} className="mt-0.5 shrink-0 text-rail" /><p className="text-sm leading-6 text-slate-200">{data.sidebar.why_this_matters}</p></div>
+      </section>
+      <section className="border-b border-stroke py-5">
+        <Label>Who controls the rail</Label>
+        <div className="flex gap-3"><Landmark size={20} className="mt-0.5 shrink-0 text-indigo" /><p className="text-sm leading-6 text-slate-200">{data.sidebar.who_controls}</p></div>
+      </section>
+
+      <section className="space-y-3 border-b border-stroke py-5">
+        <div className="flex items-center justify-between"><Label>Functional filters</Label>{loading && <span className="text-[0.5625rem] text-rail">REFRESHING</span>}</div>
+        <div className="relative">
+          <Search size={15} className="pointer-events-none absolute left-3 top-3.5 text-slate-400" />
+          <input aria-label="Search hospitals" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search hospitals..." className="h-11 w-full rounded-lg border border-stroke bg-[#070d13] pl-9 pr-3 text-sm text-slate-200 outline-none transition placeholder:text-slate-400 focus:border-rail focus:shadow-pulse" />
+          {searchResults.length > 0 && <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg border border-stroke bg-[#070d13] shadow-xl">{searchResults.map((hospital) => <button key={hospital} className="block w-full px-3 py-2 text-left text-sm text-slate-200 hover:bg-rail/10 hover:text-rail" onClick={() => { onFilter("hospital", hospital); setSearch(""); }}>{hospital}</button>)}</div>}
+        </div>
+        <Select aria-label="Hospital" value={filters.hospital} onChange={(event) => onFilter("hospital", event.target.value)}>{data.filters.hospitals.map((value) => <option key={value}>{value}</option>)}</Select>
+        <Select aria-label="Department" value={filters.department} onChange={(event) => onFilter("department", event.target.value)}>{data.filters.departments.map((value) => <option key={value}>{value}</option>)}</Select>
+        <Select aria-label="Month" value={filters.month} onChange={(event) => onFilter("month", event.target.value)}>{data.filters.months.map((value) => <option key={value}>{value}</option>)}</Select>
+      </section>
+
+      <section className="border-b border-stroke py-5">
+        <Label>Source quality</Label>
+        <div className="space-y-2">{data.sidebar.sources.map((source) => <a key={source.name} href={source.url} target="_blank" rel="noreferrer" className="block rounded-lg border border-stroke bg-surface p-3 transition hover:border-rail/50"><div className="flex items-start justify-between gap-2"><span className="text-[0.6875rem] font-medium text-white">{source.name}</span><ExternalLink size={13} className="shrink-0 text-slate-400" /></div><div className="mt-2 flex items-center justify-between text-[0.5625rem] text-slate-300"><span>{source.authority} / {source.quality}</span><span>Refreshed {source.last_refreshed}</span></div><div className="mt-1 text-[0.5625rem] text-slate-400">Cadence: {source.refresh_cadence}</div></a>)}</div>
+      </section>
+
+      <section className="py-5">
+        <Label>Signal brief</Label>
+        <div className="space-y-2">{data.insights.map((insight, index) => <Card key={insight} className="flex gap-3 p-3"><span className="font-mono text-sm text-rail">0{index + 1}</span><p className="text-[0.6875rem] leading-5 text-slate-200">{insight}</p></Card>)}</div>
+      </section>
+      <div className="mt-auto grid grid-cols-2 gap-2 pt-2"><Button onClick={() => download("csv")}><Download size={16} /> CSV</Button><Button onClick={() => download("json")}><FileJson size={16} /> JSON</Button></div>
+      <p className="mt-3 text-center text-[0.5625rem] text-slate-400">Synthetic HCAHPS-style demo data. No PHI.</p>
+    </aside>
+  );
+}
+</file>
+
+<file path="frontend/components/ui/button.tsx">
+import type { ButtonHTMLAttributes } from "react";
+
+export function Button({ className = "", ...props }: ButtonHTMLAttributes<HTMLButtonElement>) {
+  return <button className={`inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-rail/40 bg-rail/10 px-4 text-sm font-semibold text-rail transition hover:border-rail hover:bg-rail/15 hover:shadow-pulse ${className}`} {...props} />;
+}
+</file>
+
+<file path="frontend/components/ui/card.tsx">
+import type { HTMLAttributes } from "react";
+
+export function Card({ className = "", ...props }: HTMLAttributes<HTMLDivElement>) {
+  return <div className={`rounded-xl border border-stroke bg-surface/90 shadow-[inset_0_1px_0_rgba(255,255,255,.025)] backdrop-blur ${className}`} {...props} />;
+}
+</file>
+
+<file path="frontend/components/ui/select.tsx">
+import type { SelectHTMLAttributes } from "react";
+
+export function Select({ className = "", ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
+  return <select className={`h-11 w-full rounded-lg border border-stroke bg-[#070d13] px-3 text-sm text-slate-200 outline-none transition focus:border-rail focus:shadow-pulse ${className}`} {...props} />;
+}
+</file>
+
+<file path="frontend/lib/api.ts">
+import fallback from "@/public/mock_data.json";
+import type { DashboardData } from "./types";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+export async function getDashboard(filters: { hospital: string; department: string; month: string }, signal?: AbortSignal) {
+  const params = new URLSearchParams(filters);
+  try {
+    const response = await fetch(`${API_URL}/api/dashboard?${params}`, { signal, cache: "no-store" });
+    if (!response.ok) throw new Error(`API returned ${response.status}`);
+    return { data: (await response.json()) as DashboardData, isFallback: false };
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") throw error;
+    return {
+      data: {
+        ...(fallback as DashboardData),
+        selected_hospital: filters.hospital,
+        selected_department: filters.department,
+        selected_month: filters.month,
+      },
+      isFallback: true,
+    };
+  }
+}
+
+export const sampleDownloadUrls = {
+  csv: `${API_URL}/api/sample.csv`,
+  json: `${API_URL}/api/sample.json`,
+};
+</file>
+
+<file path="frontend/lib/types.ts">
+export type Direction = "up" | "down" | "neutral";
+export interface Metric { label: string; value: string; detail: string; direction: Direction }
+export interface DomainScore { domain: string; score: number; benchmark: number; delta: number }
+export interface TrendPoint { month: string; department: string; score: number; benchmark: number }
+export interface NpsCohort { cohort: string; promoters: number; passives: number; detractors: number; nps: number }
+export interface CorrelationPoint { hospital: string; satisfaction: number; readmission_rate: number; quartile: string }
+export interface HeatmapCell { department: string; month: string; score: number; status: "above" | "watch" | "priority" }
+export interface SourceQuality { name: string; url: string; authority: string; quality: string; refresh_cadence: string; last_refreshed: string }
+export interface DashboardData {
+  generated_at: string;
+  selected_hospital: string;
+  selected_department: string;
+  selected_month: string;
+  filters: { hospitals: string[]; departments: string[]; months: string[] };
+  sidebar: {
+    title: string;
+    rail_category: string;
+    headline_metric: Metric;
+    why_this_matters: string;
+    who_controls: string;
+    sources: SourceQuality[];
+  };
+  metrics: Metric[];
+  domain_scores: DomainScore[];
+  trends: TrendPoint[];
+  nps_cohorts: NpsCohort[];
+  correlations: CorrelationPoint[];
+  responsiveness: HeatmapCell[];
+  insights: string[];
+}
+</file>
+
+<file path="frontend/next-env.d.ts">
+/// <reference types="next" />
+/// <reference types="next/image-types/global" />
+
+// NOTE: This file should not be edited
+// see https://nextjs.org/docs/app/building-your-application/configuring/typescript for more information.
+</file>
+
+<file path="frontend/next.config.mjs">
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+};
+
+export default nextConfig;
+</file>
+
+<file path="frontend/package.json">
+{
+  "name": "patient-experience-intelligence-hub",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tanstack/react-table": "^8.20.6",
+    "d3": "^7.9.0",
+    "echarts": "^5.6.0",
+    "echarts-for-react": "^3.0.3",
+    "lucide-react": "^0.468.0",
+    "next": "^14.2.21",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "recharts": "^2.15.0"
+  },
+  "devDependencies": {
+    "@types/d3": "^7.4.3",
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.17",
+    "@types/react-dom": "^18.3.5",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2"
+  }
+}
+</file>
+
+<file path="frontend/postcss.config.mjs">
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+};
+</file>
+
+<file path="frontend/public/mock_data.json">
+{
+  "generated_at": "2026-06-22T00:00:00Z",
+  "selected_hospital": "All Hospitals",
+  "selected_department": "All Departments",
+  "selected_month": "All Months",
+  "filters": {
+    "hospitals": ["All Hospitals", "Al Noor Medical City", "Gulfview Specialist", "Riyadh Central", "Marina Health Campus"],
+    "departments": ["All Departments", "Emergency", "Inpatient", "Outpatient", "Maternity", "Surgery"],
+    "months": ["All Months", "2025-07", "2025-08", "2025-09", "2025-10", "2025-11", "2025-12"]
+  },
+  "sidebar": {
+    "title": "Patient Satisfaction & Experience Intelligence Hub",
+    "rail_category": "Patient Experience",
+    "headline_metric": {"label": "Experience score", "value": "77.4", "detail": "+1.2 vs benchmark", "direction": "up"},
+    "why_this_matters": "Patient experience is the lagging indicator that reflects everything else in a hospital - this turns survey data into an actionable intelligence tool for Gulf accreditation teams.",
+    "who_controls": "Hospital leadership, quality improvement teams, accreditation bodies, and healthcare regulators influence outcomes through service standards, metric oversight, and operational improvement.",
+    "sources": [
+      {"name":"HCAHPS public benchmarks","url":"https://hcahpsonline.org/","authority":"CMS","quality":"High","refresh_cadence":"Quarterly","last_refreshed":"2026-06-22"},
+      {"name":"CMS Care Compare","url":"https://www.medicare.gov/care-compare/","authority":"U.S. CMS","quality":"High","refresh_cadence":"Quarterly","last_refreshed":"2026-06-22"},
+      {"name":"Saudi CBAHI standards","url":"https://portal.cbahi.gov.sa/","authority":"CBAHI","quality":"High","refresh_cadence":"Standards cycle","last_refreshed":"2026-06-22"},
+      {"name":"UAE DOH reports","url":"https://www.doh.gov.ae/","authority":"Abu Dhabi DOH","quality":"High","refresh_cadence":"Annual","last_refreshed":"2026-06-22"},
+      {"name":"NHS Friends & Family Test","url":"https://www.england.nhs.uk/fft/","authority":"NHS England","quality":"High","refresh_cadence":"Monthly","last_refreshed":"2026-06-22"}
+    ]
+  },
+  "metrics": [
+    {"label":"Experience score","value":"77.4","detail":"+1.2 vs benchmark","direction":"up"},
+    {"label":"NPS","value":"+41","detail":"Digital check-in cohort","direction":"up"},
+    {"label":"Responses","value":"3,482","detail":"Filtered survey coverage","direction":"neutral"},
+    {"label":"Trend","value":"+3.1","detail":"Points since July","direction":"up"}
+  ],
+  "domain_scores": [
+    {"domain":"Nurse Communication","score":81.4,"benchmark":78,"delta":3.4},
+    {"domain":"Doctor Communication","score":82.1,"benchmark":80,"delta":2.1},
+    {"domain":"Staff Responsiveness","score":68.2,"benchmark":69,"delta":-0.8},
+    {"domain":"Medication Communication","score":69.4,"benchmark":66,"delta":3.4},
+    {"domain":"Discharge Information","score":86.3,"benchmark":84,"delta":2.3},
+    {"domain":"Care Transition","score":58.9,"benchmark":57,"delta":1.9}
+  ],
+  "trends": [
+    {"month":"2025-07","department":"Emergency","score":70.1,"benchmark":72.3},{"month":"2025-08","department":"Emergency","score":71.3,"benchmark":72.3},{"month":"2025-09","department":"Emergency","score":72.0,"benchmark":72.3},{"month":"2025-10","department":"Emergency","score":73.2,"benchmark":72.3},{"month":"2025-11","department":"Emergency","score":74.1,"benchmark":72.3},{"month":"2025-12","department":"Emergency","score":75.0,"benchmark":72.3},
+    {"month":"2025-07","department":"Inpatient","score":74.0,"benchmark":72.3},{"month":"2025-08","department":"Inpatient","score":75.0,"benchmark":72.3},{"month":"2025-09","department":"Inpatient","score":75.4,"benchmark":72.3},{"month":"2025-10","department":"Inpatient","score":76.2,"benchmark":72.3},{"month":"2025-11","department":"Inpatient","score":77.0,"benchmark":72.3},{"month":"2025-12","department":"Inpatient","score":78.1,"benchmark":72.3},
+    {"month":"2025-07","department":"Outpatient","score":77.0,"benchmark":72.3},{"month":"2025-08","department":"Outpatient","score":77.6,"benchmark":72.3},{"month":"2025-09","department":"Outpatient","score":78.2,"benchmark":72.3},{"month":"2025-10","department":"Outpatient","score":78.4,"benchmark":72.3},{"month":"2025-11","department":"Outpatient","score":79.1,"benchmark":72.3},{"month":"2025-12","department":"Outpatient","score":80.0,"benchmark":72.3}
+  ],
+  "nps_cohorts": [
+    {"cohort":"Digital check-in","promoters":65,"passives":11,"detractors":24,"nps":41},{"cohort":"Standard admission","promoters":58,"passives":17,"detractors":25,"nps":33},{"cohort":"Post-discharge follow-up","promoters":68,"passives":9,"detractors":23,"nps":45},{"cohort":"Complex care","promoters":51,"passives":20,"detractors":29,"nps":22}
+  ],
+  "correlations": [
+    {"hospital":"Al Noor Medical City","satisfaction":82.1,"readmission_rate":10.8,"quartile":"Q1"},{"hospital":"Gulfview Specialist","satisfaction":78.4,"readmission_rate":12.2,"quartile":"Q2"},{"hospital":"Riyadh Central","satisfaction":74.2,"readmission_rate":14.1,"quartile":"Q3"},{"hospital":"Marina Health Campus","satisfaction":70.8,"readmission_rate":16.0,"quartile":"Q4"}
+  ],
+  "responsiveness": [
+    {"department":"Emergency","month":"2025-07","score":63,"status":"priority"},{"department":"Emergency","month":"2025-08","score":64,"status":"priority"},{"department":"Emergency","month":"2025-09","score":66,"status":"watch"},{"department":"Emergency","month":"2025-10","score":67,"status":"watch"},{"department":"Emergency","month":"2025-11","score":68,"status":"watch"},{"department":"Emergency","month":"2025-12","score":70,"status":"above"},
+    {"department":"Inpatient","month":"2025-07","score":68,"status":"watch"},{"department":"Inpatient","month":"2025-08","score":69,"status":"above"},{"department":"Inpatient","month":"2025-09","score":70,"status":"above"},{"department":"Inpatient","month":"2025-10","score":71,"status":"above"},{"department":"Inpatient","month":"2025-11","score":72,"status":"above"},{"department":"Inpatient","month":"2025-12","score":73,"status":"above"},
+    {"department":"Outpatient","month":"2025-07","score":71,"status":"above"},{"department":"Outpatient","month":"2025-08","score":72,"status":"above"},{"department":"Outpatient","month":"2025-09","score":73,"status":"above"},{"department":"Outpatient","month":"2025-10","score":74,"status":"above"},{"department":"Outpatient","month":"2025-11","score":75,"status":"above"},{"department":"Outpatient","month":"2025-12","score":76,"status":"above"},
+    {"department":"Maternity","month":"2025-07","score":74,"status":"above"},{"department":"Maternity","month":"2025-08","score":75,"status":"above"},{"department":"Maternity","month":"2025-09","score":76,"status":"above"},{"department":"Maternity","month":"2025-10","score":76,"status":"above"},{"department":"Maternity","month":"2025-11","score":77,"status":"above"},{"department":"Maternity","month":"2025-12","score":78,"status":"above"},
+    {"department":"Surgery","month":"2025-07","score":67,"status":"watch"},{"department":"Surgery","month":"2025-08","score":68,"status":"watch"},{"department":"Surgery","month":"2025-09","score":69,"status":"above"},{"department":"Surgery","month":"2025-10","score":70,"status":"above"},{"department":"Surgery","month":"2025-11","score":71,"status":"above"},{"department":"Surgery","month":"2025-12","score":72,"status":"above"}
+  ],
+  "insights": ["Medication Communication leads its benchmark by +3.4 points.", "Staff Responsiveness is the highest-priority opportunity at -0.8 points versus benchmark.", "The bottom satisfaction quartile carries 5.2 points more readmission risk than the top quartile."]
+}
+</file>
+
+<file path="frontend/tailwind.config.ts">
+import type { Config } from "tailwindcss";
+
+const config: Config = {
+  content: ["./app/**/*.{js,ts,jsx,tsx}", "./components/**/*.{js,ts,jsx,tsx}"],
+  theme: {
+    extend: {
+      colors: {
+        obsidian: "#030712",
+        surface: "#0B1117",
+        rail: "#38BDF8",
+        indigo: "#818CF8",
+        stroke: "#1F2937",
+      },
+      fontFamily: { sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"] },
+      boxShadow: { pulse: "0 0 0 0.5px rgba(56,189,248,.8), 0 0 18px rgba(56,189,248,.08)" },
+    },
+  },
+  plugins: [],
+};
+
+export default config;
+</file>
+
+<file path="frontend/tsconfig.json">
+{
+  "compilerOptions": {
+    "target": "es2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [{ "name": "next" }],
+    "paths": { "@/*": ["./*"] }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
+</file>
+
+<file path="mock_data/patient_experience_synthetic_data_dictionary.md">
+# Patient Experience Synthetic Data Dictionary
+
+> **SYNTHETIC DATA - NOT REAL**
+
+This dataset supports the Patient Satisfaction & Experience Intelligence Hub demo. Facility names are fictional and modelled on Gulf healthcare naming conventions. It contains no PHI or patient-level identities.
+
+| Field | Type | Unit / format | Meaning | Realistic range |
+|---|---|---|---|---|
+| `response_id` | String | `PXS-NNNN` | Synthetic aggregate record identifier | Unique within file |
+| `survey_month` | String | `YYYY-MM` | Month represented by the aggregate | 2025-07 to 2025-12 |
+| `country` | String | Gulf country | Country of the fictional facility | Saudi Arabia, UAE, Qatar, Kuwait, Bahrain, Oman |
+| `city` | String | City | Gulf city associated with the facility | Valid city for country |
+| `facility` | String | Name | Fictional hospital or medical campus | Non-empty |
+| `department` | Category | Name | Clinical service line | Emergency, Inpatient, Outpatient, Maternity, Surgery |
+| `domain` | Category | HCAHPS-style domain | Experience dimension measured | Six supported domains |
+| `score_pct` | Decimal | Percent | Positive-response experience score | 45.0-95.0 |
+| `benchmark_pct` | Decimal | Percent | Reference benchmark for the domain | 50.0-90.0 |
+| `nps` | Integer | Score | Net Promoter Score for the cohort | -100 to +100 |
+| `readmission_rate_pct` | Decimal | Percent | Synthetic 30-day readmission linkage | 5.0-25.0 |
+| `response_count` | Integer | Responses | Aggregate survey response volume | 25-500 |
+
+The intentionally low values in `PXS-0001`, `PXS-0006`, and `PXS-0010` provide realistic priority outliers for demonstrations.
+</file>
+
+<file path="mock_data/patient_experience_synthetic.csv">
+SYNTHETIC DATA - NOT REAL
+response_id,survey_month,country,city,facility,department,domain,score_pct,benchmark_pct,nps,readmission_rate_pct,response_count
+PXS-0001,2025-07,Saudi Arabia,Riyadh,Al Noor Medical City,Emergency,Staff Responsiveness,62.8,69.0,18,16.4,184
+PXS-0002,2025-07,Saudi Arabia,Jeddah,Red Sea Specialist Hospital,Inpatient,Nurse Communication,80.6,78.0,39,11.9,231
+PXS-0003,2025-08,UAE,Abu Dhabi,Al Manara Health Campus,Outpatient,Doctor Communication,84.1,80.0,48,9.8,267
+PXS-0004,2025-08,UAE,Dubai,Creekside Specialist Hospital,Maternity,Care Transition,61.5,57.0,52,8.7,143
+PXS-0005,2025-09,Qatar,Doha,Pearl Medical City,Surgery,Medication Communication,68.9,66.0,34,12.6,119
+PXS-0006,2025-09,Kuwait,Kuwait City,Al Dana General Hospital,Emergency,Staff Responsiveness,64.7,69.0,12,17.8,208
+PXS-0007,2025-10,Bahrain,Manama,Gulf Gate Medical Centre,Inpatient,Discharge Information,87.2,84.0,44,10.5,156
+PXS-0008,2025-10,Oman,Muscat,Al Hajar Specialist Hospital,Outpatient,Nurse Communication,79.8,78.0,37,11.3,192
+PXS-0009,2025-11,Saudi Arabia,Dammam,Eastern Crescent Medical City,Maternity,Doctor Communication,85.4,80.0,57,8.9,174
+PXS-0010,2025-11,UAE,Sharjah,Al Qasr Community Hospital,Surgery,Care Transition,54.2,57.0,9,18.6,88
+PXS-0011,2025-12,Qatar,Doha,Pearl Medical City,Emergency,Medication Communication,71.6,66.0,42,11.1,223
+PXS-0012,2025-12,Oman,Salalah,Dhofar Coast Hospital,Inpatient,Staff Responsiveness,70.2,69.0,31,13.2,137
+PXS-0013,2025-07,Kuwait,Kuwait City,Al Dana General Hospital,Outpatient,Discharge Information,82.1,84.0,24,14.7,165
+PXS-0014,2025-08,Bahrain,Manama,Gulf Gate Medical Centre,Maternity,Nurse Communication,83.7,78.0,55,9.3,128
+PXS-0015,2025-09,Saudi Arabia,Riyadh,Al Noor Medical City,Surgery,Doctor Communication,76.4,80.0,21,15.1,201
+PXS-0016,2025-10,UAE,Dubai,Creekside Specialist Hospital,Emergency,Staff Responsiveness,68.1,69.0,29,13.8,294
+PXS-0017,2025-11,Oman,Muscat,Al Hajar Specialist Hospital,Inpatient,Medication Communication,73.5,66.0,46,10.2,149
+PXS-0018,2025-12,Saudi Arabia,Jeddah,Red Sea Specialist Hospital,Outpatient,Care Transition,63.8,57.0,50,9.7,258
+</file>
+
+<file path="mock_data/patient_experience_synthetic.json">
+{
+  "synthetic_data_notice": "SYNTHETIC DATA - NOT REAL",
+  "dataset_name": "patient_experience_synthetic",
+  "generated_for": "Patient Satisfaction & Experience Intelligence Hub",
+  "date_range": { "from": "2025-07", "to": "2025-12" },
+  "records": [
+    {"response_id":"PXS-0001","survey_month":"2025-07","country":"Saudi Arabia","city":"Riyadh","facility":"Al Noor Medical City","department":"Emergency","domain":"Staff Responsiveness","score_pct":62.8,"benchmark_pct":69.0,"nps":18,"readmission_rate_pct":16.4,"response_count":184},
+    {"response_id":"PXS-0002","survey_month":"2025-07","country":"Saudi Arabia","city":"Jeddah","facility":"Red Sea Specialist Hospital","department":"Inpatient","domain":"Nurse Communication","score_pct":80.6,"benchmark_pct":78.0,"nps":39,"readmission_rate_pct":11.9,"response_count":231},
+    {"response_id":"PXS-0003","survey_month":"2025-08","country":"UAE","city":"Abu Dhabi","facility":"Al Manara Health Campus","department":"Outpatient","domain":"Doctor Communication","score_pct":84.1,"benchmark_pct":80.0,"nps":48,"readmission_rate_pct":9.8,"response_count":267},
+    {"response_id":"PXS-0004","survey_month":"2025-08","country":"UAE","city":"Dubai","facility":"Creekside Specialist Hospital","department":"Maternity","domain":"Care Transition","score_pct":61.5,"benchmark_pct":57.0,"nps":52,"readmission_rate_pct":8.7,"response_count":143},
+    {"response_id":"PXS-0005","survey_month":"2025-09","country":"Qatar","city":"Doha","facility":"Pearl Medical City","department":"Surgery","domain":"Medication Communication","score_pct":68.9,"benchmark_pct":66.0,"nps":34,"readmission_rate_pct":12.6,"response_count":119},
+    {"response_id":"PXS-0006","survey_month":"2025-09","country":"Kuwait","city":"Kuwait City","facility":"Al Dana General Hospital","department":"Emergency","domain":"Staff Responsiveness","score_pct":64.7,"benchmark_pct":69.0,"nps":12,"readmission_rate_pct":17.8,"response_count":208},
+    {"response_id":"PXS-0007","survey_month":"2025-10","country":"Bahrain","city":"Manama","facility":"Gulf Gate Medical Centre","department":"Inpatient","domain":"Discharge Information","score_pct":87.2,"benchmark_pct":84.0,"nps":44,"readmission_rate_pct":10.5,"response_count":156},
+    {"response_id":"PXS-0008","survey_month":"2025-10","country":"Oman","city":"Muscat","facility":"Al Hajar Specialist Hospital","department":"Outpatient","domain":"Nurse Communication","score_pct":79.8,"benchmark_pct":78.0,"nps":37,"readmission_rate_pct":11.3,"response_count":192},
+    {"response_id":"PXS-0009","survey_month":"2025-11","country":"Saudi Arabia","city":"Dammam","facility":"Eastern Crescent Medical City","department":"Maternity","domain":"Doctor Communication","score_pct":85.4,"benchmark_pct":80.0,"nps":57,"readmission_rate_pct":8.9,"response_count":174},
+    {"response_id":"PXS-0010","survey_month":"2025-11","country":"UAE","city":"Sharjah","facility":"Al Qasr Community Hospital","department":"Surgery","domain":"Care Transition","score_pct":54.2,"benchmark_pct":57.0,"nps":9,"readmission_rate_pct":18.6,"response_count":88},
+    {"response_id":"PXS-0011","survey_month":"2025-12","country":"Qatar","city":"Doha","facility":"Pearl Medical City","department":"Emergency","domain":"Medication Communication","score_pct":71.6,"benchmark_pct":66.0,"nps":42,"readmission_rate_pct":11.1,"response_count":223},
+    {"response_id":"PXS-0012","survey_month":"2025-12","country":"Oman","city":"Salalah","facility":"Dhofar Coast Hospital","department":"Inpatient","domain":"Staff Responsiveness","score_pct":70.2,"benchmark_pct":69.0,"nps":31,"readmission_rate_pct":13.2,"response_count":137},
+    {"response_id":"PXS-0013","survey_month":"2025-07","country":"Kuwait","city":"Kuwait City","facility":"Al Dana General Hospital","department":"Outpatient","domain":"Discharge Information","score_pct":82.1,"benchmark_pct":84.0,"nps":24,"readmission_rate_pct":14.7,"response_count":165},
+    {"response_id":"PXS-0014","survey_month":"2025-08","country":"Bahrain","city":"Manama","facility":"Gulf Gate Medical Centre","department":"Maternity","domain":"Nurse Communication","score_pct":83.7,"benchmark_pct":78.0,"nps":55,"readmission_rate_pct":9.3,"response_count":128},
+    {"response_id":"PXS-0015","survey_month":"2025-09","country":"Saudi Arabia","city":"Riyadh","facility":"Al Noor Medical City","department":"Surgery","domain":"Doctor Communication","score_pct":76.4,"benchmark_pct":80.0,"nps":21,"readmission_rate_pct":15.1,"response_count":201},
+    {"response_id":"PXS-0016","survey_month":"2025-10","country":"UAE","city":"Dubai","facility":"Creekside Specialist Hospital","department":"Emergency","domain":"Staff Responsiveness","score_pct":68.1,"benchmark_pct":69.0,"nps":29,"readmission_rate_pct":13.8,"response_count":294},
+    {"response_id":"PXS-0017","survey_month":"2025-11","country":"Oman","city":"Muscat","facility":"Al Hajar Specialist Hospital","department":"Inpatient","domain":"Medication Communication","score_pct":73.5,"benchmark_pct":66.0,"nps":46,"readmission_rate_pct":10.2,"response_count":149},
+    {"response_id":"PXS-0018","survey_month":"2025-12","country":"Saudi Arabia","city":"Jeddah","facility":"Red Sea Specialist Hospital","department":"Outpatient","domain":"Care Transition","score_pct":63.8,"benchmark_pct":57.0,"nps":50,"readmission_rate_pct":9.7,"response_count":258}
+  ]
+}
+</file>
+
+<file path="README.md">
+# Patient Satisfaction & Experience Intelligence Hub
+
+Real Rails PoC 30 is a FastAPI + Next.js intelligence dashboard for HCAHPS-style experience signals, NPS cohorts, readmission linkage, and staff responsiveness.
+
+## Run
+
+Backend:
+
+```powershell
+cd backend
+.venv\Scripts\uvicorn app.main:app --reload --port 8000
+```
+
+Frontend:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+The UI runs at `http://localhost:3000`. It automatically switches to `public/mock_data.json` when the API is unavailable.
+
+## Data provenance and adapters
+
+Reusable source adapters live in `backend/app/adapters`. Each adapter exposes source authority, quality, refresh cadence, last-refresh date, and a public source link. The same metadata appears in the dashboard's Source Quality panel.
+
+Synthetic sample artifacts are clearly labeled and stored in:
+
+- `mock_data/patient_experience_synthetic.csv`
+- `mock_data/patient_experience_synthetic.json`
+- `mock_data/patient_experience_synthetic_data_dictionary.md`
+
+These files contain fictional Gulf facilities and aggregate experience metrics only. They contain no PHI. The API also provides filtered demonstration exports at `/api/sample.csv` and `/api/sample.json`.
+
+## Dashboard controls
+
+Hospital search and hospital, department, and month filters update the visualizations without navigation. Tooltips are available on every chart, the shared legend explains signal colors, and the sidebar exports CSV or JSON.
+</file>
+
+<file path=".gitattributes">
+# Auto detect text files and perform LF normalization
+* text=auto
+</file>
+
+</files>

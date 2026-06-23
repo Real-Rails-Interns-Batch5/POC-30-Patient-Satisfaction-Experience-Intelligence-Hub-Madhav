@@ -1,0 +1,27 @@
+{
+  "synthetic_data_notice": "SYNTHETIC DATA - NOT REAL",
+  "dataset_name": "patient_experience_synthetic",
+  "generated_for": "Patient Satisfaction & Experience Intelligence Hub",
+  "date_range": { "from": "2025-07", "to": "2025-12" },
+  "records": [
+    {"response_id":"PXS-0001","survey_month":"2025-07","country":"Saudi Arabia","city":"Riyadh","facility":"Al Noor Medical City","department":"Emergency","domain":"Staff Responsiveness","score_pct":62.8,"benchmark_pct":69.0,"nps":18,"readmission_rate_pct":16.4,"response_count":184},
+    {"response_id":"PXS-0002","survey_month":"2025-07","country":"Saudi Arabia","city":"Jeddah","facility":"Red Sea Specialist Hospital","department":"Inpatient","domain":"Nurse Communication","score_pct":80.6,"benchmark_pct":78.0,"nps":39,"readmission_rate_pct":11.9,"response_count":231},
+    {"response_id":"PXS-0003","survey_month":"2025-08","country":"UAE","city":"Abu Dhabi","facility":"Al Manara Health Campus","department":"Outpatient","domain":"Doctor Communication","score_pct":84.1,"benchmark_pct":80.0,"nps":48,"readmission_rate_pct":9.8,"response_count":267},
+    {"response_id":"PXS-0004","survey_month":"2025-08","country":"UAE","city":"Dubai","facility":"Creekside Specialist Hospital","department":"Maternity","domain":"Care Transition","score_pct":61.5,"benchmark_pct":57.0,"nps":52,"readmission_rate_pct":8.7,"response_count":143},
+    {"response_id":"PXS-0005","survey_month":"2025-09","country":"Qatar","city":"Doha","facility":"Pearl Medical City","department":"Surgery","domain":"Medication Communication","score_pct":68.9,"benchmark_pct":66.0,"nps":34,"readmission_rate_pct":12.6,"response_count":119},
+    {"response_id":"PXS-0006","survey_month":"2025-09","country":"Kuwait","city":"Kuwait City","facility":"Al Dana General Hospital","department":"Emergency","domain":"Staff Responsiveness","score_pct":64.7,"benchmark_pct":69.0,"nps":12,"readmission_rate_pct":17.8,"response_count":208},
+    {"response_id":"PXS-0007","survey_month":"2025-10","country":"Bahrain","city":"Manama","facility":"Gulf Gate Medical Centre","department":"Inpatient","domain":"Discharge Information","score_pct":87.2,"benchmark_pct":84.0,"nps":44,"readmission_rate_pct":10.5,"response_count":156},
+    {"response_id":"PXS-0008","survey_month":"2025-10","country":"Oman","city":"Muscat","facility":"Al Hajar Specialist Hospital","department":"Outpatient","domain":"Nurse Communication","score_pct":79.8,"benchmark_pct":78.0,"nps":37,"readmission_rate_pct":11.3,"response_count":192},
+    {"response_id":"PXS-0009","survey_month":"2025-11","country":"Saudi Arabia","city":"Dammam","facility":"Eastern Crescent Medical City","department":"Maternity","domain":"Doctor Communication","score_pct":85.4,"benchmark_pct":80.0,"nps":57,"readmission_rate_pct":8.9,"response_count":174},
+    {"response_id":"PXS-0010","survey_month":"2025-11","country":"UAE","city":"Sharjah","facility":"Al Qasr Community Hospital","department":"Surgery","domain":"Care Transition","score_pct":54.2,"benchmark_pct":57.0,"nps":9,"readmission_rate_pct":18.6,"response_count":88},
+    {"response_id":"PXS-0011","survey_month":"2025-12","country":"Qatar","city":"Doha","facility":"Pearl Medical City","department":"Emergency","domain":"Medication Communication","score_pct":71.6,"benchmark_pct":66.0,"nps":42,"readmission_rate_pct":11.1,"response_count":223},
+    {"response_id":"PXS-0012","survey_month":"2025-12","country":"Oman","city":"Salalah","facility":"Dhofar Coast Hospital","department":"Inpatient","domain":"Staff Responsiveness","score_pct":70.2,"benchmark_pct":69.0,"nps":31,"readmission_rate_pct":13.2,"response_count":137},
+    {"response_id":"PXS-0013","survey_month":"2025-07","country":"Kuwait","city":"Kuwait City","facility":"Al Dana General Hospital","department":"Outpatient","domain":"Discharge Information","score_pct":82.1,"benchmark_pct":84.0,"nps":24,"readmission_rate_pct":14.7,"response_count":165},
+    {"response_id":"PXS-0014","survey_month":"2025-08","country":"Bahrain","city":"Manama","facility":"Gulf Gate Medical Centre","department":"Maternity","domain":"Nurse Communication","score_pct":83.7,"benchmark_pct":78.0,"nps":55,"readmission_rate_pct":9.3,"response_count":128},
+    {"response_id":"PXS-0015","survey_month":"2025-09","country":"Saudi Arabia","city":"Riyadh","facility":"Al Noor Medical City","department":"Surgery","domain":"Doctor Communication","score_pct":76.4,"benchmark_pct":80.0,"nps":21,"readmission_rate_pct":15.1,"response_count":201},
+    {"response_id":"PXS-0016","survey_month":"2025-10","country":"UAE","city":"Dubai","facility":"Creekside Specialist Hospital","department":"Emergency","domain":"Staff Responsiveness","score_pct":68.1,"benchmark_pct":69.0,"nps":29,"readmission_rate_pct":13.8,"response_count":294},
+    {"response_id":"PXS-0017","survey_month":"2025-11","country":"Oman","city":"Muscat","facility":"Al Hajar Specialist Hospital","department":"Inpatient","domain":"Medication Communication","score_pct":73.5,"benchmark_pct":66.0,"nps":46,"readmission_rate_pct":10.2,"response_count":149},
+    {"response_id":"PXS-0018","survey_month":"2025-12","country":"Saudi Arabia","city":"Jeddah","facility":"Red Sea Specialist Hospital","department":"Outpatient","domain":"Care Transition","score_pct":63.8,"benchmark_pct":57.0,"nps":50,"readmission_rate_pct":9.7,"response_count":258}
+  ]
+}
+
