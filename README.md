@@ -166,29 +166,38 @@ Add the following screenshots in this section:
 
 ### Dashboard Overview
 
-![Dashboard Overview](screenshots/dashboard-overview.png)
+![Dashboard Overview](images/Dashboard Overview.png)
 
 ### HCAHPS Benchmark Radar
 
-![Radar Chart](screenshots/radar-chart.png)
+![Radar Chart](images/HCAHPS Benchmark Radar.png)
 
 ### Satisfaction Trend Analysis
 
-![Trend Analysis](screenshots/trend-analysis.png)
+![Trend Analysis](images/Satisfaction Trend Analysis.png)
 
 ### NPS Cohort Waterfall
 
-![NPS Waterfall](screenshots/nps-waterfall.png)
+![NPS Waterfall](images/NPS cohort waterfall.png)
 
 ### Satisfaction vs Readmission Correlation
 
-![Correlation Analysis](screenshots/correlation-analysis.png)
+![Correlation Analysis](images/Satisfaction vs Readmission Correlation.png)
 
 ### Staff Responsiveness Heatmap
 
-![Heatmap](screenshots/responsiveness-heatmap.png)
+![Heatmap](images/Staff responsiveness heatmap.png)
 
-> Recommended: Use all five screenshots you shared during development to demonstrate dashboard functionality and analytics coverage.
+### Intelligence Sidebar
+
+1.
+![Intelligence Sidebar1](images/Intelligence Sidebar1.png)
+2.
+![Intelligence Sidebar2](images/Intelligence Sidebar2.png)
+3.
+![Intelligence Sidebar3](images/Intelligence Sidebar3.png)
+4.
+![Intelligence Sidebar4](images/Intelligence Sidebar4.png)
 
 ---
 
