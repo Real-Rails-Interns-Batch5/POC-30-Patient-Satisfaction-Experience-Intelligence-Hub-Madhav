@@ -164,38 +164,38 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 
 ### Dashboard Overview
 
-![Dashboard Overview](images/Dashboard Overview.png)
+![Dashboard Overview](images/6.png)
 
 ### HCAHPS Benchmark Radar
 
-![Radar Chart](images/HCAHPS Benchmark Radar.png)
+![Radar Chart](images/7.png)
 
 ### Satisfaction Trend Analysis
 
-![Trend Analysis](images/Satisfaction Trend Analysis.png)
+![Trend Analysis](images/8.png)
 
 ### NPS Cohort Waterfall
 
-![NPS Waterfall](images/NPS cohort waterfall.png)
+![NPS Waterfall](images/9.png)
 
 ### Satisfaction vs Readmission Correlation
 
-![Correlation Analysis](images/Satisfaction vs Readmission Correlation.png)
+![Correlation Analysis](images/10.png)
 
 ### Staff Responsiveness Heatmap
 
-![Heatmap](images/Staff responsiveness heatmap.png)
+![Heatmap](images/11.png)
 
 ### Intelligence Sidebar
 
 1.
-![Intelligence Sidebar1](images/Intelligence Sidebar1.png)
+![Intelligence Sidebar1](images/12.png)
 2.
-![Intelligence Sidebar2](images/Intelligence Sidebar2.png)
+![Intelligence Sidebar2](images/13.png)
 3.
-![Intelligence Sidebar3](images/Intelligence Sidebar3.png)
+![Intelligence Sidebar3](images/14.png)
 4.
-![Intelligence Sidebar4](images/Intelligence Sidebar4.png)
+![Intelligence Sidebar4](images/15.png)
 
 ---
 
