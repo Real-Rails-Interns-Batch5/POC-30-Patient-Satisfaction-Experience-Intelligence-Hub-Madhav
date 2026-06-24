@@ -162,8 +162,6 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 
 # Screenshots
 
-Add the following screenshots in this section:
-
 ### Dashboard Overview
 
 ![Dashboard Overview](images/Dashboard Overview.png)
