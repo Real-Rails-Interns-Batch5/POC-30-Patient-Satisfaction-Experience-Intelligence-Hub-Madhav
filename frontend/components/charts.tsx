@@ -92,10 +92,22 @@ export function SatisfactionTrend({ data }: { data: DashboardData["trends"] }) {
   const departments = Array.from(new Set(data.map((item) => item.department)));
   const colors = ["#38BDF8", "#818CF8", "#22d3ee", "#a78bfa", "#34d399"];
   const rows = Array.from(new Set(data.map((item) => item.month))).map((month) => {
-    const row: Record<string, string | number> = { month: month.slice(5) };
-    data.filter((item) => item.month === month).forEach((item) => { row[item.department] = item.score; });
-    return row;
+  const row: Record<string, string | number> = {
+    month: month.slice(5),
+  };
+
+  const monthData = data.filter((item) => item.month === month);
+
+  monthData.forEach((item) => {
+    row[item.department] = item.score;
   });
+
+  if (monthData.length > 0) {
+    row["Benchmark"] = monthData[0].benchmark;
+  }
+
+  return row;
+});
   return (
     <ResponsiveContainer width="100%" height="100%">
       <LineChart data={rows} margin={{ top: 8, right: 10, left: -22, bottom: 0 }}>
@@ -103,13 +115,24 @@ export function SatisfactionTrend({ data }: { data: DashboardData["trends"] }) {
         <XAxis dataKey="month" tick={axis} axisLine={false} tickLine={false} />
         <YAxis domain={[55, 90]} tick={axis} axisLine={false} tickLine={false} />
         <Tooltip contentStyle={tooltipStyle} itemStyle={{ color: '#cbd5e1' }} labelStyle={{ color: '#ffffff', fontWeight: 600 }} />
+        <Legend />
+        <Line
+  type="monotone"
+  dataKey="Benchmark"
+  stroke="#94A3B8"
+  strokeWidth={2}
+  strokeDasharray="5 5"
+  dot={false}
+  name="Benchmark"
+  isAnimationActive
+/>
         {departments.map((department, index) => <Line key={department} type="monotone" dataKey={department} stroke={colors[index % colors.length]} strokeWidth={2} dot={false} activeDot={{ r: 4 }} isAnimationActive />)}
       </LineChart>
     </ResponsiveContainer>
   );
 }
 
-export function NpsWaterfall({ data }: { data: DashboardData["nps_cohorts"] }) {
+/* export function NpsWaterfall({ data }: { data: DashboardData["nps_cohorts"] }) {
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart data={data} margin={{ top: 8, right: 8, left: -20, bottom: 8 }}>
@@ -120,6 +143,165 @@ export function NpsWaterfall({ data }: { data: DashboardData["nps_cohorts"] }) {
         <Bar dataKey="nps" radius={[4, 4, 0, 0]} isAnimationActive>{data.map((item) => <Cell key={item.cohort} fill={item.nps >= 35 ? "#38BDF8" : item.nps >= 25 ? "#818CF8" : "#f59e0b"} />)}</Bar>
       </BarChart>
     </ResponsiveContainer>
+  );
+} */
+
+export function NpsWaterfall({
+  data,
+}: {
+  data: DashboardData["nps_cohorts"];
+}) {
+  const categories = data.map((d) => d.cohort);
+
+  let cumulative = 0;
+
+  const base: number[] = [];
+  const values: number[] = [];
+
+  data.forEach((item) => {
+    base.push(cumulative);
+    values.push(item.nps);
+    cumulative += item.nps;
+  });
+
+  const option = {
+    backgroundColor: "transparent",
+
+    tooltip: {
+      trigger: "axis",
+
+      axisPointer: {
+        type: "shadow",
+      },
+
+      backgroundColor: "#071019",
+      borderColor: "#1f2937",
+      borderWidth: 1,
+
+      textStyle: {
+        color: "#e5e7eb",
+        fontSize: 13,
+      },
+
+      formatter: (params: any) => {
+        const baseValue = params[0]?.value ?? 0;
+        const contribution = params[1]?.value ?? 0;
+
+        return `
+          <div style="padding:4px;">
+            <div style="
+              color:#ffffff;
+              font-weight:600;
+              margin-bottom:6px;
+            ">
+              ${params[1]?.name}
+            </div>
+
+            <div style="color:#cbd5e1;">
+              Contribution:
+              <span style="
+                color:#38BDF8;
+                font-weight:600;
+              ">
+                ${contribution > 0 ? "+" : ""}${contribution}
+              </span>
+            </div>
+
+            <div style="color:#94A3B8;margin-top:4px;">
+              Running Total:
+              <span style="font-weight:600;">
+                ${baseValue + contribution}
+              </span>
+            </div>
+          </div>
+        `;
+      },
+    },
+
+    grid: {
+      left: 40,
+      right: 20,
+      top: 20,
+      bottom: 40,
+    },
+
+    xAxis: {
+      type: "category",
+      data: categories,
+
+      axisLabel: {
+        color: "#cbd5e1",
+        fontSize: 11,
+      },
+
+      axisLine: {
+        lineStyle: {
+          color: "#1f2937",
+        },
+      },
+    },
+
+    yAxis: {
+      type: "value",
+
+      axisLabel: {
+        color: "#cbd5e1",
+      },
+
+      splitLine: {
+        lineStyle: {
+          color: "#16202b",
+        },
+      },
+    },
+
+    series: [
+      {
+        type: "bar",
+        stack: "total",
+        silent: true,
+
+        itemStyle: {
+          color: "transparent",
+        },
+
+        emphasis: {
+          itemStyle: {
+            color: "transparent",
+          },
+        },
+
+        data: base,
+      },
+
+      {
+        type: "bar",
+        stack: "total",
+
+        data: values.map((value) => ({
+          value,
+
+          itemStyle: {
+            borderRadius: [4, 4, 0, 0],
+
+            color:
+              value >= 40
+                ? "#38BDF8"
+                : value >= 25
+                ? "#818CF8"
+                : "#f59e0b",
+          },
+        })),
+      },
+    ],
+  };
+
+  return (
+    <ReactECharts
+      option={option}
+      style={{ height: "100%", width: "100%" }}
+      notMerge
+    />
   );
 }
 

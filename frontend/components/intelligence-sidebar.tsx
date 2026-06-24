@@ -79,6 +79,32 @@ export function IntelligenceSidebar({ data, filters, onFilter, isFallback, loadi
         <Select aria-label="Department" value={filters.department} onChange={(event) => onFilter("department", event.target.value)}>{data.filters.departments.map((value) => <option key={value}>{value}</option>)}</Select>
         <Select aria-label="Month" value={filters.month} onChange={(event) => onFilter("month", event.target.value)}>{data.filters.months.map((value) => <option key={value}>{value}</option>)}</Select>
       </section>
+      
+      <section className="border-b border-stroke py-5">
+  <Label>Benchmark Frameworks</Label>
+
+  <div className="space-y-2">
+    {[
+      "HCAHPS / CMS",
+      "CMS Hospital Compare",
+      "Saudi CBAHI",
+      "UAE DOH",
+      "NHS Friends & Family Test",
+    ].map((item) => (
+      <Card key={item} className="p-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium text-white">
+            {item}
+          </span>
+
+          <span className="text-[10px] text-rail">
+            ACTIVE
+          </span>
+        </div>
+      </Card>
+    ))}
+  </div>
+</section>
 
       <section className="border-b border-stroke py-5">
         <Label>Source quality</Label>
