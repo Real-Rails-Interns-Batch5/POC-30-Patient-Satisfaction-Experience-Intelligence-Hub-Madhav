@@ -1,3 +1,4 @@
+# Infocreon Internship - Patient Satisfaction & Experience Intelligence Hub
 # Patient Satisfaction & Experience Intelligence Hub
 
 ## Project Overview
@@ -12,7 +13,7 @@ The application provides a unified dashboard for analyzing:
 * Department-level responsiveness performance
 * Accreditation and benchmark comparisons
 
-Built using **Next.js**, **TypeScript**, **FastAPI**, and **Tailwind CSS**, the platform follows the Gulf Healthcare Real Rails Intelligence Library architecture with a 70/30 visualization-to-intelligence layout.
+Built using **Next.js**, **TypeScript**, **FastAPI**, and **Tailwind CSS**, the platform follows the Gulf Healthcare Infocreon Intelligence Library architecture with a 70/30 visualization-to-intelligence layout.
 
 ---
 
@@ -207,7 +208,7 @@ Artificial Intelligence tools were used during development for:
 
 * Dashboard layout planning
 * Information architecture recommendations
-* Real Rails intelligence-panel design guidance
+* Infocreon intelligence-panel design guidance
 * Visualization selection validation
 
 ### Development Assistance
@@ -279,4 +280,4 @@ The project achieved:
 * Synthetic healthcare data generation
 * Export capabilities
 * 100% UAT test pass rate
-* Full Real Rails Intelligence Library compliance
+* Full Infocreon Intelligence Library compliance

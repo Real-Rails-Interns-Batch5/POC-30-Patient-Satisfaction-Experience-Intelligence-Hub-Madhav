@@ -31,7 +31,7 @@ The dashboard uses the correct visual archetypes for benchmarking, temporal anal
 | Check | Status | Assessment |
 |---------|---------|------------|
 | Background Color | PASS | Global dashboard background is strictly #030712 (Obsidian theme). |
-| Real Rails Design Language | PASS | Consistent use of rail blue accents, indigo benchmark colors, glassmorphism cards, and intelligence-panel layout. |
+| Infocreon Design Language | PASS | Consistent use of rail blue accents, indigo benchmark colors, glassmorphism cards, and intelligence-panel layout. |
 | 70/30 Layout Split | PASS | Dashboard stage occupies 70% width and intelligence sidebar occupies 30% width. |
 | Intelligence Sidebar | PASS | Sidebar contains rail metadata, benchmark sources, controls, signal brief, and source quality information. |
 | Typography & Contrast | PASS | High-contrast intelligence-dashboard styling maintained throughout. |
@@ -40,7 +40,7 @@ The dashboard uses the correct visual archetypes for benchmarking, temporal anal
 
 **PASS**
 
-Dashboard fully complies with Gulf Healthcare Real Rails Intelligence Library design standards.
+Dashboard fully complies with Gulf Healthcare Infocreon Intelligence Library design standards.
 
 ---
 
@@ -84,7 +84,7 @@ All required data sources are accurately represented within the primary 70% visu
 | Requirement Coverage | 10/10 |
 | Visual Archetype Accuracy | 10/10 |
 | Data Mapping Accuracy | 10/10 |
-| Real Rails DNA Compliance | 10/10 |
+| Infocreon DNA Compliance | 10/10 |
 | 70/30 Layout Compliance | 10/10 |
 | Gulf Accreditation Alignment | 10/10 |
 
@@ -94,6 +94,6 @@ All required data sources are accurately represented within the primary 70% visu
 
 ## PASS — 10.0 / 10
 
-The **Patient Satisfaction & Experience Intelligence Hub** fully satisfies the Excel row requirements, required visual archetypes, Real Rails dashboard DNA standards, benchmark source representation requirements, and Gulf healthcare accreditation intelligence objectives.
+The **Patient Satisfaction & Experience Intelligence Hub** fully satisfies the Excel row requirements, required visual archetypes, Infocreon dashboard DNA standards, benchmark source representation requirements, and Gulf healthcare accreditation intelligence objectives.
 
 No critical visualization, architecture, or data-mapping issues remain.

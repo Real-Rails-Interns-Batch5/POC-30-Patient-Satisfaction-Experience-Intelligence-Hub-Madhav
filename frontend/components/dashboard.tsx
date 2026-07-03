@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Activity, ArrowDownRight, ArrowUpRight, Minus, Sparkles } from "lucide-react";
+import { Activity, ArrowDownRight, ArrowUpRight, Minus, Sparkles, Info, X } from "lucide-react";
 import fallback from "@/public/mock_data.json";
 import { getDashboard } from "@/lib/api";
 import type { DashboardData, Metric } from "@/lib/types";
@@ -39,6 +39,8 @@ export function Dashboard() {
   const [filters, setFilters] = useState(initialFilters);
   const [isFallback, setFallback] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [metaOpen, setMetaOpen] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -49,13 +51,39 @@ export function Dashboard() {
 
   const onFilter = (key: keyof typeof filters, value: string) => setFilters((current) => ({ ...current, [key]: value }));
   return (
-    <main className="flex min-h-screen flex-col bg-obsidian lg:h-screen lg:flex-row lg:overflow-hidden">
-      <section className="terminal-grid scrollbar flex min-h-screen flex-col overflow-y-auto px-5 py-5 lg:h-screen lg:w-[70%] lg:min-w-0 lg:px-6">
-        <header className="mb-4 flex items-center justify-between">
-          <div><div className="flex items-center gap-2 text-[0.625rem] font-semibold uppercase tracking-[.2em] text-slate-300"><Sparkles size={14} className="text-rail" /> Experience signal room</div><h2 className="mt-1 text-xl font-medium text-white">Operational experience telemetry</h2></div>
-          <div className="hidden items-center gap-2 text-[0.625rem] text-slate-300 sm:flex"><span className={`h-1.5 w-1.5 rounded-full ${loading ? "animate-pulse bg-amber-400" : "bg-emerald-400"}`} />{loading ? "Synchronizing" : "Signals current"}</div>
-        </header>
-        <div className="mb-4 grid grid-cols-2 gap-3 xl:grid-cols-4">{data.metrics.map((metric) => <MetricCard key={metric.label} metric={metric} />)}</div>
+    <main className="flex min-h-screen flex-col bg-obsidian lg:h-screen lg:overflow-hidden">
+      {/* Semi-transparent fixed header: contains small label, project title, status, and info icon */}
+      <div className="fixed left-0 right-0 top-0 z-50 mx-auto flex h-16 items-center justify-between gap-3 px-6 bg-surface/30 backdrop-blur-sm pointer-events-none">
+        <div className="pointer-events-auto flex flex-col">
+          <div className="flex items-center gap-2 text-[0.625rem] font-semibold uppercase tracking-[.2em] text-slate-300"><Sparkles size={14} className="text-rail" /> Experience signal room</div>
+          <div className="mt-0.5 text-sm font-medium text-white">Infocreon Internship - Patient Experience Intelligence Hub</div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-2 text-[0.625rem] text-slate-300"><span className={`h-1.5 w-1.5 rounded-full ${loading ? "animate-pulse bg-amber-400" : "bg-emerald-400"}`} />{loading ? "Synchronizing" : "Signals current"}</div>
+          <button aria-label="Show metadata" onClick={() => setMetaOpen((s) => !s)} className="pointer-events-auto rounded-md p-2 text-slate-300 hover:bg-white/2">
+            <Info size={18} />
+          </button>
+        </div>
+      </div>
+      {metaOpen && (
+        <div className="fixed right-4 top-14 z-50 w-80 rounded-lg border border-stroke bg-surface/95 p-4 shadow-lg">
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="text-sm font-medium text-slate-300">Architect</div>
+              <div className="text-white">Madhav S</div>
+            </div>
+            <button onClick={() => setMetaOpen(false)} className="text-slate-400"><X /></button>
+          </div>
+          <div className="mt-3 space-y-1 text-[0.875rem] text-slate-200">
+            <div><span className="font-semibold">Batch:</span> Batch 5 Interns</div>
+            <div><span className="font-semibold">Stack:</span> Next.js, FastAPI, Tailwind CSS, Map/Chart Engine</div>
+          </div>
+        </div>
+      )}
+
+      <section className={`terminal-grid scrollbar flex min-h-screen flex-col overflow-y-auto px-5 pt-16 pb-5 lg:h-screen lg:min-w-0 lg:px-6 ${sidebarOpen ? 'lg:mr-[360px]' : ''}`}>
+        {/* header moved into fixed top bar to avoid overlapping content */}
+        <div className="mb-4 grid grid-cols-2 gap-3 xl:grid-cols-4">{data.metrics.map((metric) => <div key={metric.label} onClick={() => setSidebarOpen(true)}>{/* open slide-over on click */}<MetricCard metric={metric} /></div>)}</div>
         <SignalLegend />
         <div className="grid flex-none auto-rows-[28rem] grid-cols-1 gap-4">
           <ChartCard eyebrow="HCAHPS domains" title={`Benchmark profile - ${data.selected_hospital}`}><DomainRadar data={data.domain_scores} /></ChartCard>
@@ -65,7 +93,7 @@ export function Dashboard() {
           <ChartCard eyebrow="Service friction" title="Staff responsiveness heatmap"><ResponsivenessHeatmap data={data.responsiveness} /></ChartCard>
         </div>
       </section>
-      <IntelligenceSidebar data={data} filters={filters} onFilter={onFilter} isFallback={isFallback} loading={loading} />
+      <IntelligenceSidebar data={data} filters={filters} onFilter={onFilter} isFallback={isFallback} loading={loading} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
     </main>
   );
 }

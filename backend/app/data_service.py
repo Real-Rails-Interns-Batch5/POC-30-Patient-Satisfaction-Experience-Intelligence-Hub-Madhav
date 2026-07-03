@@ -144,7 +144,7 @@ def build_dashboard(hospital: str, department: str, month: str) -> DashboardResp
     ]
 
     sidebar = Sidebar(
-        title="Patient Satisfaction & Experience Intelligence Hub",
+        title="Infocreon Internship - Patient Satisfaction & Experience Intelligence Hub",
         rail_category="Patient Experience",
         headline_metric=metrics[0],
         why_this_matters="Patient experience is the lagging indicator that reflects everything else in a hospital - this turns survey data into an actionable intelligence tool for Gulf accreditation teams.",

@@ -5,8 +5,10 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        obsidian: "#030712",
-        surface: "#0B1117",
+        /* Cinematic Rail defaults (Maritime) */
+        obsidian: "#021627",
+        surface: "#06121a",
+        /* Accent (rail) kept bright so it pops against deep background */
         rail: "#38BDF8",
         indigo: "#818CF8",
         stroke: "#1F2937",

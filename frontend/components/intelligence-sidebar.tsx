@@ -14,13 +14,15 @@ interface Props {
   onFilter: (key: "hospital" | "department" | "month", value: string) => void;
   isFallback: boolean;
   loading: boolean;
+  open?: boolean;
+  onClose?: () => void;
 }
 
 function Label({ children }: { children: React.ReactNode }) {
   return <div className="mb-2 text-[0.625rem] font-semibold uppercase tracking-[.18em] text-slate-300">{children}</div>;
 }
 
-export function IntelligenceSidebar({ data, filters, onFilter, isFallback, loading }: Props) {
+export function IntelligenceSidebar({ data, filters, onFilter, isFallback, loading, open = true, onClose }: Props) {
   const [search, setSearch] = useState("");
   const searchResults = useMemo(
       () => search.trim().length < 2 ? [] : data.filters.hospitals.filter((hospital) => hospital !== "All Hospitals" && hospital.toLowerCase().includes(search.toLowerCase())),
@@ -45,11 +47,18 @@ export function IntelligenceSidebar({ data, filters, onFilter, isFallback, loadi
     window.location.href = sampleDownloadUrls[format];
   };
   return (
-    <aside className="scrollbar flex h-screen flex-col overflow-y-auto border-l border-stroke bg-[#060b11]/95 px-5 py-6 lg:w-[30%] lg:min-w-[340px]">
+    <aside
+      className={`scrollbar fixed top-16 right-0 z-40 h-[calc(100%-4rem)] w-full max-w-[420px] transform overflow-y-auto bg-[#060b11]/95 px-5 pt-6 pb-6 transition-transform duration-300 ease-in-out lg:max-w-[360px] ${open ? "translate-x-0" : "translate-x-full"}`}
+      aria-hidden={!open}
+    >
+      {/* close button relocated next to the connection status badge */}
       <section className="border-b border-stroke pb-6">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2 text-[0.625rem] font-semibold uppercase tracking-[.2em] text-rail"><Radio size={15} className="animate-pulse" /> Rail 30 / Live</div>
-          <span className={`rounded-full border px-2 py-1 text-[0.5625rem] uppercase tracking-wider ${isFallback ? "border-amber-500/30 text-amber-400" : "border-emerald-500/30 text-emerald-400"}`}>{isFallback ? "Mock fallback" : "API connected"}</span>
+          <div className="flex items-center gap-2">
+            <span className={`rounded-full border px-2 py-1 text-[0.5625rem] uppercase tracking-wider ${isFallback ? "border-amber-500/30 text-amber-400" : "border-emerald-500/30 text-emerald-400"}`}>{isFallback ? "Mock fallback" : "API connected"}</span>
+            <button aria-label="Close panel" onClick={() => onClose?.()} className="rounded p-2 text-slate-300 hover:bg-white/2">X</button>
+          </div>
         </div>
         <p className="mb-2 text-sm text-indigo">{data.sidebar.rail_category}</p>
         <h1 className="text-2xl font-semibold leading-tight text-white">{data.sidebar.title}</h1>
